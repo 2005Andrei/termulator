@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
@@ -20,14 +21,34 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new StartWindow(() =>
-            {
-                var mainWindow = new MainWindow() { DataContext = new MainWindowViewModel() };
-                mainWindow.Show();
-                mainWindow.Focus();
+            desktop.MainWindow = new StartWindow(
+                (filePath) =>
+                {
+                    var mainWindowViewModel = new MainWindowViewModel();
+                    var mainWindow = new MainWindow() { DataContext = mainWindowViewModel };
 
-                desktop.MainWindow = mainWindow;
-            })
+                    mainWindow.Show();
+                    desktop.MainWindow = mainWindow;
+
+                    _ = mainWindowViewModel.StartGame(filePath);
+
+                    bool isShuttingDown = false;
+                    mainWindow.Closing += async (sender, e) =>
+                    {
+                        if (!isShuttingDown)
+                        {
+                            e.Cancel = true;
+                            isShuttingDown = true;
+
+                            await mainWindowViewModel.engine.DisposeAsync();
+
+                            mainWindow.Close();
+                        }
+                    };
+
+                    return Task.CompletedTask;
+                }
+            )
             {
                 DataContext = new StartWindowViewModel(),
             };

@@ -1,10 +1,4 @@
-<table width="100%">
-  <tr>
-    <td align="center">
-      <h1>Termulator</h1>
-    </td>
-  </tr>
-</table>
+# Termulator
 
 This is homework for uni programming class.
 

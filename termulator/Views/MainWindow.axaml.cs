@@ -3,7 +3,6 @@ using Avalonia.Interactivity;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-
 namespace termulator.Views;
 
 public partial class MainWindow : Window

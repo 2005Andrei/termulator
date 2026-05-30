@@ -13,11 +13,11 @@ namespace termulator.Views;
 
 public partial class StartWindow : Window
 {
-    private readonly Action? _mainAction;
+    private readonly Func<string, Task>? _mainAction;
 
     public StartWindow() { }
 
-    public StartWindow(Action mainAction)
+    public StartWindow(Func<string, Task>? mainAction)
     {
         InitializeComponent();
         _mainAction = mainAction;
@@ -122,14 +122,17 @@ public partial class StartWindow : Window
         {
             if (viewModel.HasFile)
             {
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    _mainAction?.Invoke();
-                    Close();
-                });
+                string filePath = viewModel.FilePath;
+                await _mainAction.Invoke(filePath);
+                Close();
+
+                // await Dispatcher.UIThread.InvokeAsync(async () =>
+                // {
+                //     await _mainAction.Invoke(filePath);
+                //     Close();
+                // });
             }
         }
-        Console.WriteLine("yes");
     }
 
     private async Task<bool> CheckForDockerAsync()
