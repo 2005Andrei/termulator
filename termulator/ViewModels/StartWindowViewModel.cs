@@ -25,10 +25,26 @@ public partial class StartWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _dockerFail = false;
 
-
     [ObservableProperty]
     private bool _dockerSuccess = false;
 
+    [ObservableProperty]
+    private bool _loadZip = false;
+
+    [ObservableProperty]
+    private bool _loadEngine = false;
+
     // to here
 
+    [ObservableProperty]
+    private string _filePath = string.Empty;
+
+    [ObservableProperty]
+    private bool _hasFile;
+
+    public void AddFile(string filePath)
+    {
+        HasFile = true;
+        FilePath = filePath;
+    }
 }

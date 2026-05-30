@@ -1,7 +1,11 @@
 using System;
+using System.Diagnostics;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using termulator.ViewModels;
 
@@ -50,32 +54,119 @@ public partial class StartWindow : Window
             viewModel.IsIntroVisible = false;
             viewModel.CheckDocker = true;
 
-            await Task.Delay(2000); 
-
+            await Task.Delay(2000);
 
             // check for docker on the system here: todo
 
             viewModel.CheckDocker = false;
 
-            bool dockerInstalled = true;
+            bool dockerInstalled = await CheckForDockerAsync();
 
-            if (!dockerInstalled) {
+            if (!dockerInstalled)
+            {
                 viewModel.DockerFail = true;
                 await Task.Delay(2000);
                 Close();
-                // close the app automatically
+                return;
             }
 
             viewModel.DockerSuccess = true;
 
             await Task.Delay(3000);
 
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                _mainAction?.Invoke();
-                Close();
-            });
-        }
+            viewModel.DockerSuccess = false;
 
+            await Task.Delay(200);
+
+            // start the engine here
+
+            viewModel.LoadZip = true;
+
+            viewModel.LoadEngine = true;
+        }
+    }
+
+    // file functionality
+    private async void fileBtn(object? sender, RoutedEventArgs e)
+    {
+        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storageProvider == null)
+            return;
+
+        var files = await storageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions
+            {
+                Title = "Select File",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Zips") { Patterns = new[] { "*.txt" } }, // txt atm
+                    FilePickerFileTypes.All,
+                },
+            }
+        );
+        if (files.Count >= 1)
+        {
+            string filePath = files[0].Path.LocalPath;
+
+            if (DataContext is StartWindowViewModel vm)
+            {
+                vm.AddFile(filePath);
+            }
+        }
+    }
+
+    private async void submitBtn(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is StartWindowViewModel viewModel)
+        {
+            if (viewModel.HasFile)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    _mainAction?.Invoke();
+                    Close();
+                });
+            }
+        }
+        Console.WriteLine("yes");
+    }
+
+    private async Task<bool> CheckForDockerAsync()
+    {
+        try
+        {
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = "--version",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+
+            using var process = new Process { StartInfo = processInfo };
+
+            process.Start();
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+
+            await process.WaitForExitAsync(cts.Token);
+
+            return process.ExitCode == 0
+                && output.Contains("version", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+            when (ex is OperationCanceledException || ex is System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 }

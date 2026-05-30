@@ -12,21 +12,39 @@
             </TextBlock>
         </Border>
         <Border BorderBrush="Black" BorderThickness="2" IsVisible="{Binding CheckDocker}">
-            <Grid RowDefinitions="Auto, Auto">
-                <TextBlock Grid.Row="1" FontWeight="Bold" FontSize="16" Text="Docker is a requirment for this learning experience" />
-                <TextBlock Grid.Row="2"
-                <TextBlock Grid.Row="3"
-
-            </Grid>
-        </Border>
-        <Border BorderBrush="Black" BorderThickness="2" IsVisible="{Binding DockerFail}">
-
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="15">
+                <Grid RowDefinitions="Auto, Auto, Auto">
+                    <TextBlock Grid.Row="0" FontWeight="Bold" FontSize="16" Text="Docker is a requirment for this learning experience"/>
+                    <TextBlock Grid.Row="1" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" Text="Checking for docker on your machine" Margin="0, 0, 0, 5"/>
+                    <TextBlock Grid.Row="2" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" Text="The app will spin up a linux image via docker for you." Margin="0, 0, 0, 5"/>
+                </Grid>
+            </StackPanel>
         </Border>
         <Border BorderBrush="Black" BorderThickness="2" IsVisible="{Binding DockerSuccess}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="15">
+                <TextBlock Text="Docker is installed on your system" Foreground="Green" FontWeight="Bold" FontSize="24" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+        <Border BorderBrush="Black" BorderThickness="2" IsVisible="{Binding DockerFail}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="15">
                 <TextBlock Text="ERROR: Docker Not Found" Foreground="Red" FontWeight="Bold" FontSize="24" HorizontalAlignment="Center"/>
                 <TextBlock Text="You must have Docker installed and running on your system to use Termulator." TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300"/>
             </StackPanel>
+        </Border>
+        <Border BorderBrush="Black" BorderThickness="2" IsVisible="{Binding LoadZip}">
+            <Grid RowDefinitions="*, Auto" Margin="15">
+                <StackPanel Grid.Row="0" VerticalAlignment="Center" Spacing="10">
+                    <TextBlock Text="Select a zip from your computer." FontStyle="Italic" Opacity="0.7" HorizontalAlignment="Center" IsVisible="{Binding !HasFile}"/>
+                    <StackPanel Spacing="4" IsVisible="{Binding HasFile}">
+                        <TextBlock Text="Selected File:" FontSize="12" FontWeight="SemiBold"/>
+                        <Border Background="#1A000000" CornerRadius="4" Padding="8">
+                            <TextBlock Text="{Binding FilePath}" TextTrimming="CharacterEllipsis" FontSize="12" ToolTip.Tip="{Binding FilePath}"/>
+                        </Border>
+                    </StackPanel>
+                    <Button Content="Browse Files..." Click="fileBtn" HorizontalAlignment="Center" Padding="16,6"/>
+                </StackPanel>
+                <Button Grid.Row="1" Content="Next..." Click="submitBtn" IsEnabled="{Binding HasFile}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10"/>
+            </Grid>
         </Border>
     </Panel>
 </Window>
