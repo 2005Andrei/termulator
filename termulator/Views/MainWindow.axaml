@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<Window xmlns="https://github.com/avaloniaui" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:vm="using:termulator.ViewModels" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Icon="/Assets/avalonia-logo.ico" Title="termulator" d:DesignHeight="450" d:DesignWidth="800" mc:Ignorable="d" x:Class="termulator.Views.MainWindow" x:DataType="vm:MainWindowViewModel">
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+    <Window.Styles>
+        <StyleInclude Source="/Styles/DefaultStyles.axaml"/>
+    </Window.Styles>
+    <Grid RowDefinitions="Auto, Auto, *">
+        <!-- stats -->
+        <Border Background="#1E1E1E" BorderBrush="#333" BorderThickness="0,0,0,1" Grid.Row="0" Padding="15,10">
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN"/>
+                <TextBlock Foreground="Lime" Text="CPU: 45%"/>
+                <TextBlock Foreground="Orange" Text="Number of Commands: 3"/>
+                <TextBlock Foreground="Purple" Text="Blocks to go: 5"/>
+            </StackPanel>
+        </Border>
+        <!-- graph thingy to visualize current block -->
+        <Border Background="#1A1A1A" CornerRadius="5" Grid.Row="1" Height="50">
+            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" VerticalAlignment="Center">
+                <Rectangle Fill="Gray" Height="2" VerticalAlignment="Center" Width="50"/>
+                <Ellipse Cursor="Hand" Fill="Cyan" Height="15" Stroke="White" StrokeThickness="2" Width="15"/>
+                <Rectangle Fill="Gray" Height="2" VerticalAlignment="Center" Width="50"/>
+                <Ellipse Cursor="Hand" Fill="Red" Height="15" Stroke="White" StrokeThickness="2" Width="15"/>
+                <Rectangle Fill="Gray" Height="2" VerticalAlignment="Center" Width="50"/>
+            </StackPanel>
+        </Border>
+        <Grid Grid.Row="2">
+            <Border Background="Black" CornerRadius="5" Grid.Row="0" Margin="10,0,10,10" Padding="10">
+                <Grid RowDefinitions="Auto, Auto">
+                    <ScrollViewer Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock FontFamily="Consolas, Courier New" Foreground="#00FF00" Text="Instructions"/>
+                    </ScrollViewer>
+                    <Grid Grid.Row="1" RowDefinitions="*, Auto">
+                        <ScrollViewer Grid.Row="0">
+                            <StackPanel>
+                                <TextBlock FontFamily="Consolas, Courier New" Foreground="#00FF00" Text="Output" Margin="0,0,0,10"/>
+                                <ItemsControl ItemsSource="{Binding History}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,0,0,10">
+                                                <TextBlock Text="{Binding Command, StringFormat='root@sys:~$ {0}'}" Foreground="White" Margin="0,0,0,2"/>
+                                                <TextBlock FontFamily="Consolas" Foreground="White" Text="{Binding Output}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <StackPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal">
+                            <TextBlock Foreground="White" Margin="0, 5, 0, 0" Text="root@sys:~$ "/>
+                            <TextBox AcceptsTab="True" Background="Transparent" BorderThickness="0" CaretBrush="White" Classes="NoBorder" FontFamily="Consolas" Foreground="White" Text="{Binding CurrentCommand, Mode=TwoWay}" Width="600" x:Name="Command">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Command="{Binding ExecuteCommand}" Gesture="Enter"/>
+                                </TextBox.KeyBindings>
+                            </TextBox>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+            <!-- Hint -->
+            <Grid HorizontalAlignment="Right" Margin="0,20,20,0" VerticalAlignment="Top">
+                <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenHint_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Yellow" IsVisible="False" Padding="12,8" x:Name="OpenHintButton">
+                    <TextBlock Text="? HINT"/>
+                </Button>
+                <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="200" x:Name="HintPanel">
+                    <Grid RowDefinitions="Auto, Auto">
+                        <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,5">
+                            <TextBlock FontWeight="Bold" Foreground="Yellow" Text="HINT" VerticalAlignment="Center"/>
+                            <Button Background="Transparent" Click="CloseHint_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
+                        </Grid>
+                        <TextBlock Foreground="White" Grid.Row="1" Text="Check the red node in the diagram. It requires a manual override command." TextWrapping="Wrap"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
