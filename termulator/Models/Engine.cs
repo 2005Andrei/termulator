@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,14 +25,14 @@ public class Engine : IAsyncDisposable
 
     public async Task Initialize(IProgress<(int percentage, string message)>? progress = null)
     {
-        progress?.Report((10, "Getting latest alpine image..."));
+        progress?.Report((10, "getting latest alpine image"));
 
         await Task.Delay(500);
 
-        progress?.Report((40, $"Starting container: {_container}..."));
+        progress?.Report((40, $"starting container: {_container}..."));
         await RunBackgroundProcessAsync($"run -d -t --name {_container} {_image} sh");
 
-        progress?.Report((70, "Attaching shell..."));
+        progress?.Report((70, "attaching shell..."));
         _shellProcess = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -48,56 +50,135 @@ public class Engine : IAsyncDisposable
         _shellProcess.Start();
         _isRunning = true;
 
-        progress?.Report((100, "Container ready."));
+        progress?.Report((100, "Container ready"));
     }
 
-    public async Task<string> executeCommand(string command)
+    // public async Task<string> executeCommand(string command)
+    // {
+    //     if (!_isRunning || _shellProcess == null || _shellProcess.HasExited)
+    //     {
+    //         return "";
+    //     }
+    //
+    //     var output = new StringBuilder();
+    //
+    //     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+    //
+    //     try
+    //     {
+    //         await _shellProcess.StandardInput.WriteLineAsync($"{{ {command}; }} 2>&1");
+    //         await _shellProcess.StandardInput.WriteLineAsync($"echo {limit}");
+    //
+    //         while (true)
+    //         {
+    //             var line = await _shellProcess.StandardOutput.ReadLineAsync(cts.Token);
+    //
+    //             if (line == null)
+    //                 break;
+    //             if (line.Trim() == limit)
+    //                 break;
+    //
+    //             output.AppendLine(line);
+    //         }
+    //     }
+    //     catch (System.IO.IOException)
+    //     {
+    //     }
+    //     catch (OperationCanceledException)
+    //     {
+    //         try
+    //         {
+    //             await _shellProcess.StandardInput.WriteLineAsync("\x03");
+    //         }
+    //         catch { }
+    //         return output.ToString() + "\nTimed out.";
+    //     }
+    //
+    //     return output.ToString().TrimEnd();
+    // }
+
+    public async IAsyncEnumerable<string> StreamCommand(
+        string command,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
     {
-        // Check if the process exists AND hasn't exited
         if (!_isRunning || _shellProcess == null || _shellProcess.HasExited)
         {
-            return "[Error: Shell process is not running or has terminated]";
+            yield return "not running";
+            yield break;
         }
 
-        var output = new StringBuilder();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(30));
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        bool wroteOk = await TryWriteCommand(command);
+        if (!wroteOk)
+        {
+            yield return "idk anymore";
+            yield break;
+        }
 
+        while (true)
+        {
+            var (line, timedOut, brokenPipe) = await TryReadLine(cts.Token);
+
+            if (brokenPipe)
+            {
+                _isRunning = false;
+                yield return "broien pipe";
+                yield break;
+            }
+
+            if (timedOut)
+            {
+                try
+                {
+                    await _shellProcess.StandardInput.WriteLineAsync("\x03");
+                }
+                catch { }
+                yield return "timed out";
+                yield break;
+            }
+
+            if (line == null || line.Trim() == limit)
+                yield break;
+
+            yield return line;
+        }
+    }
+
+    private async Task<bool> TryWriteCommand(string command)
+    {
         try
         {
-            // Try writing to the process. If it died unexpectedly, this will throw an IOException.
-            await _shellProcess.StandardInput.WriteLineAsync($"{{ {command}; }} 2>&1");
-            await _shellProcess.StandardInput.WriteLineAsync($"echo {limit}");
-
-            while (true)
-            {
-                var line = await _shellProcess.StandardOutput.ReadLineAsync(cts.Token);
-
-                if (line == null)
-                    break;
-                if (line.Trim() == limit)
-                    break;
-
-                output.AppendLine(line);
-            }
+            await _shellProcess!.StandardInput.WriteLineAsync($"{{ {command}; }} 2>&1");
+            await _shellProcess!.StandardInput.WriteLineAsync($"echo {limit}");
+            return true;
         }
         catch (System.IO.IOException)
         {
-            _isRunning = false; // Mark engine as dead
-            return "[Connection to the terminal was lost (Broken Pipe).]";
+            _isRunning = false;
+            return false;
+        }
+    }
+
+    private async Task<(string? line, bool timedOut, bool brokenPipe)> TryReadLine(
+        CancellationToken token
+    )
+    {
+        try
+        {
+            var line = await _shellProcess!.StandardOutput.ReadLineAsync(token);
+            return (line, false, false);
         }
         catch (OperationCanceledException)
         {
-            // If we time out, try to send a Ctrl+C (\x03) to unblock it
-            try
-            {
-                await _shellProcess.StandardInput.WriteLineAsync("\x03");
-            }
-            catch { }
-            return output.ToString() + "\n[Process timed out. Avoid blocking commands.]";
+            return (null, true, false);
         }
-
-        return output.ToString().TrimEnd();
+        catch (System.IO.IOException)
+        {
+            return (null, false, true);
+        }
     }
 
     private async Task RunBackgroundProcessAsync(string args)

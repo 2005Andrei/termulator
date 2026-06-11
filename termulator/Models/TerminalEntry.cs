@@ -1,7 +1,11 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace termulator.ViewModels;
 
-public class TerminalEntry
+public partial class TerminalEntry : ObservableObject
 {
     public string? Command { get; set; }
-    public string? Output { get; set; }
+
+    [ObservableProperty]
+    public string? _output = string.Empty;
 }

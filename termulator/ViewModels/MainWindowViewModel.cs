@@ -55,7 +55,6 @@ public partial class MainWindowViewModel : ObservableObject
     public async Task Execute()
     {
         string commandToRun = CurrentCommand?.Trim() ?? string.Empty;
-
         if (string.IsNullOrWhiteSpace(commandToRun))
             return;
 
@@ -68,12 +67,41 @@ public partial class MainWindowViewModel : ObservableObject
 
         CurrentCommand = string.Empty;
 
-        TerminalEntry currentEntry = new TerminalEntry
-        {
-            Command = commandToRun,
-            Output = await engine.executeCommand(commandToRun),
-        };
+        // Add entry immediately so the prompt echoes right away
+        var entry = new TerminalEntry { Command = commandToRun, Output = "" };
+        History.Add(entry);
 
-        History.Add(currentEntry);
+        var sb = new System.Text.StringBuilder();
+        await foreach (var line in engine.StreamCommand(commandToRun))
+        {
+            sb.AppendLine(line);
+            entry.Output = sb.ToString().TrimEnd(); // triggers OnPropertyChanged → UI updates
+        }
     }
+
+    // [RelayCommand]
+    // public async Task Execute()
+    // {
+    //     string commandToRun = CurrentCommand?.Trim() ?? string.Empty;
+    //
+    //     if (string.IsNullOrWhiteSpace(commandToRun))
+    //         return;
+    //
+    //     if (commandToRun == "clear" || commandToRun == "reset")
+    //     {
+    //         History.Clear();
+    //         CurrentCommand = string.Empty;
+    //         return;
+    //     }
+    //
+    //     CurrentCommand = string.Empty;
+    //
+    //     TerminalEntry currentEntry = new TerminalEntry
+    //     {
+    //         Command = commandToRun,
+    //         Output = await engine.executeCommand(commandToRun),
+    //     };
+    //
+    //     History.Add(currentEntry);
+    // }
 }
