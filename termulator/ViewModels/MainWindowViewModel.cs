@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -23,6 +24,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _startupMessage = "Initializing";
+
+    [ObservableProperty]
+    private bool _isCommandRunning = false;
+
+    private CancellationTokenSource? _commandCts;
 
     public async Task StartEngine()
     {
@@ -54,6 +60,15 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task Execute()
     {
+        Console.WriteLine(
+            $"[Execute] IsCommandRunning={IsCommandRunning}, command={CurrentCommand}"
+        );
+        if (IsCommandRunning)
+        {
+            CancelRunningCommand();
+            return;
+        }
+
         string commandToRun = CurrentCommand?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(commandToRun))
             return;
@@ -66,42 +81,39 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         CurrentCommand = string.Empty;
+        IsCommandRunning = true;
 
-        // Add entry immediately so the prompt echoes right away
+        _commandCts = new CancellationTokenSource();
+
         var entry = new TerminalEntry { Command = commandToRun, Output = "" };
         History.Add(entry);
 
-        var sb = new System.Text.StringBuilder();
-        await foreach (var line in engine.StreamCommand(commandToRun))
+        var sb = new StringBuilder();
+        try
         {
-            sb.AppendLine(line);
-            entry.Output = sb.ToString().TrimEnd(); // triggers OnPropertyChanged → UI updates
+            await foreach (var line in engine.StreamCommand(commandToRun, _commandCts.Token))
+            {
+                sb.AppendLine(line);
+                entry.Output = sb.ToString().TrimEnd();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            entry.Output = (sb.Length > 0 ? sb + "\n" : "") + "^C";
+        }
+        finally
+        {
+            _commandCts.Dispose();
+            _commandCts = null;
+            IsCommandRunning = false;
         }
     }
 
-    // [RelayCommand]
-    // public async Task Execute()
-    // {
-    //     string commandToRun = CurrentCommand?.Trim() ?? string.Empty;
-    //
-    //     if (string.IsNullOrWhiteSpace(commandToRun))
-    //         return;
-    //
-    //     if (commandToRun == "clear" || commandToRun == "reset")
-    //     {
-    //         History.Clear();
-    //         CurrentCommand = string.Empty;
-    //         return;
-    //     }
-    //
-    //     CurrentCommand = string.Empty;
-    //
-    //     TerminalEntry currentEntry = new TerminalEntry
-    //     {
-    //         Command = commandToRun,
-    //         Output = await engine.executeCommand(commandToRun),
-    //     };
-    //
-    //     History.Add(currentEntry);
-    // }
+    [RelayCommand]
+    public void CancelRunningCommand()
+    {
+        Console.WriteLine("yes cancelling");
+        _commandCts?.Cancel();
+        engine.SendInterrupt();
+    }
 }

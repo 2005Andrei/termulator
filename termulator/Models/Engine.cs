@@ -13,6 +13,7 @@ public class Engine : IAsyncDisposable
     private readonly string _image = "alpine:latest";
     private readonly string _container;
     private bool _isRunning = false;
+    private Process? _interruptShell;
 
     private Process? _shellProcess;
 
@@ -48,54 +49,28 @@ public class Engine : IAsyncDisposable
         };
 
         _shellProcess.Start();
+
+        _shellProcess.StandardInput.WriteLine("echo $$ > /tmp/shell_pid");
+
+        _interruptShell = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = $"exec -i {_container} sh",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = false,
+                RedirectStandardError = false,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            },
+        };
+        _interruptShell.Start();
+
         _isRunning = true;
 
         progress?.Report((100, "Container ready"));
     }
-
-    // public async Task<string> executeCommand(string command)
-    // {
-    //     if (!_isRunning || _shellProcess == null || _shellProcess.HasExited)
-    //     {
-    //         return "";
-    //     }
-    //
-    //     var output = new StringBuilder();
-    //
-    //     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-    //
-    //     try
-    //     {
-    //         await _shellProcess.StandardInput.WriteLineAsync($"{{ {command}; }} 2>&1");
-    //         await _shellProcess.StandardInput.WriteLineAsync($"echo {limit}");
-    //
-    //         while (true)
-    //         {
-    //             var line = await _shellProcess.StandardOutput.ReadLineAsync(cts.Token);
-    //
-    //             if (line == null)
-    //                 break;
-    //             if (line.Trim() == limit)
-    //                 break;
-    //
-    //             output.AppendLine(line);
-    //         }
-    //     }
-    //     catch (System.IO.IOException)
-    //     {
-    //     }
-    //     catch (OperationCanceledException)
-    //     {
-    //         try
-    //         {
-    //             await _shellProcess.StandardInput.WriteLineAsync("\x03");
-    //         }
-    //         catch { }
-    //         return output.ToString() + "\nTimed out.";
-    //     }
-    //
-    //     return output.ToString().TrimEnd();
-    // }
 
     public async IAsyncEnumerable<string> StreamCommand(
         string command,
@@ -108,42 +83,41 @@ public class Engine : IAsyncDisposable
             yield break;
         }
 
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(TimeSpan.FromSeconds(30));
-
         bool wroteOk = await TryWriteCommand(command);
         if (!wroteOk)
         {
-            yield return "idk anymore";
+            yield return "idk anywhere";
             yield break;
         }
 
+        bool cancelAcknowledged = false;
+
         while (true)
         {
-            var (line, timedOut, brokenPipe) = await TryReadLine(cts.Token);
+            var (line, brokenPipe) = await TryReadLine();
 
             if (brokenPipe)
             {
                 _isRunning = false;
-                yield return "broien pipe";
-                yield break;
-            }
-
-            if (timedOut)
-            {
-                try
-                {
-                    await _shellProcess.StandardInput.WriteLineAsync("\x03");
-                }
-                catch { }
-                yield return "timed out";
+                yield return "broken pipe";
                 yield break;
             }
 
             if (line == null || line.Trim() == limit)
+            {
                 yield break;
+            }
 
-            yield return line;
+            if (!cancelAcknowledged && cancellationToken.IsCancellationRequested)
+            {
+                cancelAcknowledged = true;
+                yield return "^C";
+            }
+
+            if (!cancelAcknowledged)
+            {
+                yield return line;
+            }
         }
     }
 
@@ -151,8 +125,11 @@ public class Engine : IAsyncDisposable
     {
         try
         {
-            await _shellProcess!.StandardInput.WriteLineAsync($"{{ {command}; }} 2>&1");
+            await _shellProcess!.StandardInput.WriteLineAsync($"{command} 2>&1");
             await _shellProcess!.StandardInput.WriteLineAsync($"echo {limit}");
+
+            await _shellProcess!.StandardInput.FlushAsync();
+
             return true;
         }
         catch (System.IO.IOException)
@@ -162,22 +139,33 @@ public class Engine : IAsyncDisposable
         }
     }
 
-    private async Task<(string? line, bool timedOut, bool brokenPipe)> TryReadLine(
-        CancellationToken token
-    )
+    private async Task<(string? line, bool brokenPipe)> TryReadLine()
     {
         try
         {
-            var line = await _shellProcess!.StandardOutput.ReadLineAsync(token);
-            return (line, false, false);
-        }
-        catch (OperationCanceledException)
-        {
-            return (null, true, false);
+            var line = await _shellProcess!.StandardOutput.ReadLineAsync();
+            return (line, false);
         }
         catch (System.IO.IOException)
         {
-            return (null, false, true);
+            return (null, true);
+        }
+    }
+
+    public void SendInterrupt()
+    {
+        if (!_isRunning || _interruptShell == null || _interruptShell.HasExited)
+            return;
+
+        try
+        {
+            _interruptShell.StandardInput.WriteLine(
+                "pkill -INT -P $(cat /tmp/shell_pid) 2>/dev/null"
+            );
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
         }
     }
 
