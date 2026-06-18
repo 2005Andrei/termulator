@@ -15,6 +15,8 @@ public partial class StartWindow : Window
 {
     private readonly Func<string, Task>? _mainAction;
 
+    public bool SkipIntro { get; set; } = false;
+
     public StartWindow() { }
 
     public StartWindow(Func<string, Task>? mainAction)
@@ -25,7 +27,19 @@ public partial class StartWindow : Window
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
-        LoadAll();
+        // LoadAll();
+        if (SkipIntro)
+        {
+            if (DataContext is StartWindowViewModel viewModel)
+            {
+                viewModel.IsIntroVisible = false;
+                viewModel.LoadZip = true;
+            }
+        }
+        else
+        {
+            LoadAll();
+        }
     }
 
     private async void LoadAll()

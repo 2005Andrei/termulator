@@ -3,8 +3,11 @@ using System.Collections.ObjectModel;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using termulator.Views;
 
 namespace termulator.ViewModels;
 
@@ -134,22 +137,50 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void LoadState()
     {
-        Console.WriteLine("restart");
-    }
-
-    public void SaveState()
-    {
-        Console.WriteLine("restart");
+        ReturnToStartWindow();
     }
 
     public void OpenStory()
     {
-        Console.WriteLine("restart");
+        ReturnToStartWindow();
+    }
+
+    // Centralized method to handle the window swap
+    private void ReturnToStartWindow()
+    {
+        if (
+            Application.Current?.ApplicationLifetime
+            is IClassicDesktopStyleApplicationLifetime desktopApp
+        )
+        {
+            var currentTerminalWindow = desktopApp.MainWindow;
+
+            // 1. Create a new StartWindow, passing your StartGame logic back into it
+            var startWindow = new StartWindow(this.StartGame)
+            {
+                DataContext = new StartWindowViewModel(),
+                SkipIntro = true, // Fast-forward straight to the file picker
+            };
+
+            // 2. Set the new window as the application's Main Window
+            desktopApp.MainWindow = startWindow;
+
+            // 3. Show the new StartWindow
+            startWindow.Show();
+
+            // 4. Close the old Terminal Window
+            currentTerminalWindow?.Close();
+        }
+    }
+
+    public void SaveState()
+    {
+        Console.WriteLine("Save state clicked");
     }
 
     public void Restart()
     {
-        Console.WriteLine("restart");
+        Console.WriteLine("Restart clicked");
     }
 
     public void ExitAppCommand()
