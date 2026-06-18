@@ -58,16 +58,25 @@ public partial class MainWindowViewModel : ObservableObject
         DockerLoaded = true;
     }
 
-    public async Task StartGame(string filePath)
+    public async Task StartGame(string filePath, string? stateFilePath = null)
     {
         Console.WriteLine("start game");
         loadStory(filePath);
         await StartEngine();
+        if (!string.IsNullOrWhiteSpace(stateFilePath))
+        {
+            loadState(stateFilePath);
+        }
+    }
+
+    public void loadState(string filePath)
+    {
+        Console.WriteLine("load previous game state");
     }
 
     public void loadStory(string filePath)
     {
-        Console.WriteLine("load game state");
+        Console.WriteLine("load story");
     }
 
     [RelayCommand]
@@ -155,8 +164,9 @@ public partial class MainWindowViewModel : ObservableObject
         {
             var currentTerminalWindow = desktopApp.MainWindow;
 
+            // Update this delegate signature as well
             var startWindow = new StartWindow(
-                async (filePath) =>
+                async (filePath, stateFilePath) =>
                 {
                     var newViewModel = new MainWindowViewModel();
                     var newMainWindow = new MainWindow { DataContext = newViewModel };
@@ -164,7 +174,8 @@ public partial class MainWindowViewModel : ObservableObject
                     desktopApp.MainWindow = newMainWindow;
                     newMainWindow.Show();
 
-                    await newViewModel.StartGame(filePath);
+                    // Pass both parameters
+                    await newViewModel.StartGame(filePath, stateFilePath);
                 }
             )
             {
@@ -173,9 +184,7 @@ public partial class MainWindowViewModel : ObservableObject
             };
 
             desktopApp.MainWindow = startWindow;
-
             startWindow.Show();
-
             currentTerminalWindow?.Close();
         }
     }

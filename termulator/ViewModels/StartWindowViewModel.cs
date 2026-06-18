@@ -47,4 +47,15 @@ public partial class StartWindowViewModel : ObservableObject
         HasFile = true;
         FilePath = filePath;
     }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasStateFile))]
+    private string _stateFilePath = string.Empty;
+
+    public bool HasStateFile => !string.IsNullOrEmpty(StateFilePath);
+
+    public void AddStateFile(string path)
+    {
+        StateFilePath = path;
+    }
 }

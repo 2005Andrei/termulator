@@ -31,13 +31,14 @@
                 <TextBlock Text="You must have Docker installed and running on your system to use Termulator." TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300"/>
             </StackPanel>
         </Border>
+        <!-- file -->
         <Border Background="#151515" BorderBrush="#333" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400" IsVisible="{Binding LoadZip}">
             <StackPanel Spacing="16">
                 <TextBlock Text="SYSTEM INITIALIZATION" Foreground="Cyan" FontWeight="Bold" FontSize="14" LetterSpacing="1"/>
                 <Rectangle Height="1" Fill="#333" HorizontalAlignment="Stretch" Margin="0,-4,0,4"/>
                 <StackPanel Spacing="6">
                     <TextBlock Text="SELECT BOOT MODE" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
-                    <ComboBox HorizontalAlignment="Stretch" SelectedIndex="0" Background="#222" BorderBrush="#444" Foreground="#EEE" CornerRadius="4" Padding="10,8">
+                    <ComboBox x:Name="BootModeComboBox" SelectionChanged="BootMode_SelectionChanged" HorizontalAlignment="Stretch" SelectedIndex="0" Background="#222" BorderBrush="#444" Foreground="#EEE" CornerRadius="4" Padding="10,8">
                         <ComboBoxItem Content="Load Story"/>
                         <ComboBoxItem Content="Load State"/>
                     </ComboBox>
@@ -52,6 +53,18 @@
                             </Grid>
                         </Border>
                         <Button Grid.Column="1" Content="BROWSE..." Click="fileBtn" Background="#333" Foreground="#EEE" BorderThickness="1" BorderBrush="#555" CornerRadius="4" Padding="15,8" Cursor="Hand"/>
+                    </Grid>
+                </StackPanel>
+                <StackPanel x:Name="StateFilePanel" Spacing="6" IsVisible="False">
+                    <TextBlock Text="TARGET STATE FILE (.JSON)" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Border Grid.Column="0" Background="#1A1A1A" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,8,0">
+                            <Grid>
+                                <TextBlock Text="Select a state file..." FontStyle="Italic" Foreground="#555" VerticalAlignment="Center" IsVisible="{Binding !HasStateFile}"/>
+                                <TextBlock Text="{Binding StateFilePath}" Foreground="#EEE" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding StateFilePath}" IsVisible="{Binding HasStateFile}"/>
+                            </Grid>
+                        </Border>
+                        <Button Grid.Column="1" Content="BROWSE..." Click="stateFileBtn" Background="#333" Foreground="#EEE" BorderThickness="1" BorderBrush="#555" CornerRadius="4" Padding="15,8" Cursor="Hand"/>
                     </Grid>
                 </StackPanel>
                 <Button Content="START SEQUENCE" Click="submitBtn" IsEnabled="{Binding HasFile}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#004D40" Foreground="Lime" BorderBrush="Lime" BorderThickness="1" CornerRadius="4" Padding="0,12" Margin="0,8,0,0" FontWeight="Bold" LetterSpacing="1" Cursor="Hand"/>

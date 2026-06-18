@@ -22,7 +22,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new StartWindow(
-                (filePath) =>
+                (filePath, stateFilePath) =>
                 {
                     var mainWindowViewModel = new MainWindowViewModel();
                     var mainWindow = new MainWindow() { DataContext = mainWindowViewModel };
@@ -30,7 +30,7 @@ public partial class App : Application
                     mainWindow.Show();
                     desktop.MainWindow = mainWindow;
 
-                    _ = mainWindowViewModel.StartGame(filePath);
+                    _ = mainWindowViewModel.StartGame(filePath, stateFilePath);
 
                     bool isShuttingDown = false;
                     mainWindow.Closing += async (sender, e) =>
@@ -39,9 +39,7 @@ public partial class App : Application
                         {
                             e.Cancel = true;
                             isShuttingDown = true;
-
                             await mainWindowViewModel.engine.DisposeAsync();
-
                             mainWindow.Close();
                         }
                     };

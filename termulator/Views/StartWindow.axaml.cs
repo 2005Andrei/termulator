@@ -13,13 +13,13 @@ namespace termulator.Views;
 
 public partial class StartWindow : Window
 {
-    private readonly Func<string, Task>? _mainAction;
+    private readonly Func<string, string?, Task>? _mainAction;
 
     public bool SkipIntro { get; set; } = true; // REMEMBER TO CHECK BACK TO FALSE
 
     public StartWindow() { }
 
-    public StartWindow(Func<string, Task>? mainAction)
+    public StartWindow(Func<string, string?, Task>? mainAction)
     {
         InitializeComponent();
         _mainAction = mainAction;
@@ -137,17 +137,83 @@ public partial class StartWindow : Window
             if (viewModel.HasFile)
             {
                 string filePath = viewModel.FilePath;
-                await _mainAction.Invoke(filePath);
-                Close();
 
-                // await Dispatcher.UIThread.InvokeAsync(async () =>
-                // {
-                //     await _mainAction.Invoke(filePath);
-                //     Close();
-                // });
+                // Determine if we should send a state file based on the UI mode
+                // (Assuming Index 1 is "Load State" and the ViewModel has the state file)
+                string? statePath = null;
+                if (
+                    BootModeComboBox != null
+                    && BootModeComboBox.SelectedIndex == 1
+                    && viewModel.HasStateFile
+                )
+                {
+                    statePath = viewModel.StateFilePath;
+                }
+
+                // Invoke with both arguments!
+                await _mainAction!.Invoke(filePath, statePath);
+                Close();
             }
         }
     }
+
+    private void BootMode_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (StateFilePanel != null && BootModeComboBox != null)
+        {
+            StateFilePanel.IsVisible = BootModeComboBox.SelectedIndex == 1;
+        }
+    }
+
+    // Handles the second file browser button
+    private async void stateFileBtn(object? sender, RoutedEventArgs e)
+    {
+        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storageProvider == null)
+            return;
+
+        var files = await storageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions
+            {
+                Title = "Select State File",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } },
+                    FilePickerFileTypes.All,
+                },
+            }
+        );
+
+        if (files.Count >= 1)
+        {
+            string filePath = files[0].Path.LocalPath;
+
+            if (DataContext is StartWindowViewModel vm)
+            {
+                vm.AddStateFile(filePath);
+            }
+        }
+    }
+
+    // private async void submitBtn(object? sender, RoutedEventArgs e)
+    // {
+    //     if (DataContext is StartWindowViewModel viewModel)
+    //     {
+    //         if (viewModel.HasFile)
+    //         {
+    //             string filePath = viewModel.FilePath;
+    //             await _mainAction.Invoke(filePath);
+    //             Close();
+    //
+    //             // await Dispatcher.UIThread.InvokeAsync(async () =>
+    //             // {
+    //             //     await _mainAction.Invoke(filePath);
+    //             //     Close();
+    //             // });
+    //         }
+    //     }
+    // }
 
     private async Task<bool> CheckForDockerAsync()
     {
