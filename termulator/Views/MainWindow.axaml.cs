@@ -79,7 +79,8 @@ public partial class MainWindow : Window
     {
         if (DataContext is ViewModels.MainWindowViewModel vm)
         {
-            foreach (var node in vm.GraphNodes)
+            // UPDATED HERE: look at vm.GameState.GraphNodes
+            foreach (var node in vm.state.GraphNodes)
             {
                 node.StrokeColor = "#555";
             }

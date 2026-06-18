@@ -9,151 +9,161 @@
     <Window.KeyBindings>
         <KeyBinding Command="{Binding CancelRunningCommandCommand}" Gesture="Ctrl+C"/>
     </Window.KeyBindings>
-    <Grid RowDefinitions="Auto, Auto, *">
-        <!-- stats -->
-        <Border Background="#1E1E1E" BorderBrush="#333" BorderThickness="0,0,0,1" Grid.Row="0" Padding="15,10">
-            <Grid ColumnDefinitions="*, Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
-                    <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN"/>
-                    <TextBlock Foreground="Lime" Text="CPU: 45%"/>
-                    <TextBlock Foreground="Purple" Text="Blocks to go: 5"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
-                    <TextBlock Foreground="Orange" Text="Number of Commands: 3"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-        <!-- graph thingy to visualize current block -->
-        <Border Background="#1A1A1A" CornerRadius="5" Grid.Row="1" Height="50" Padding="15,0">
-            <Grid ColumnDefinitions="Auto, *">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
-                    <TextBlock Text="CURRENT NODE:" Foreground="#888" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
-                    <Ellipse Width="8" Height="8" Fill="{Binding ActiveNode.NodeColor, TargetNullValue=Transparent}"/>
-                    <TextBlock Text="{Binding ActiveNode.DashboardTitle, TargetNullValue=NONE}" Foreground="{Binding ActiveNode.NodeColor, TargetNullValue=#888}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" LetterSpacing="1"/>
-                </StackPanel>
-                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="30,0,0,0">
-                    <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
-                        <ItemsControl ItemsSource="{Binding GraphNodes}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Rectangle Fill="#333" Height="2" VerticalAlignment="Center" Width="40"/>
-                                        <Ellipse Cursor="Hand" Fill="{Binding NodeColor}" Height="15" Stroke="{Binding StrokeColor}" StrokeThickness="2" Width="15" PointerPressed="Node_PointerPressed"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <Rectangle Fill="#333" Height="2" VerticalAlignment="Center" Width="40"/>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Background="#2D2D30" Foreground="White">
+            <MenuItem Header="_Save state" Command="{Binding SaveState}"/>
+            <MenuItem Header="_Load State" Command="{Binding LoadState}"/>
+            <MenuItem Header="_Open Story" Command="{Binding OpenStory}"/>
+            <MenuItem Header="_Restart" Command="{Binding Restart}"/>
+            <MenuItem Header="E_xit" Command="{Binding ExitAppCommand}"/>
+        </Menu>
+        <Grid RowDefinitions="Auto, Auto, *">
+            <!-- stats -->
+            <Border Background="#1E1E1E" BorderBrush="#333" BorderThickness="0,0,0,1" Grid.Row="0" Padding="15,10">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
+                        <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN"/>
+                        <TextBlock Foreground="Lime" Text="CPU: 45%"/>
+                        <TextBlock Foreground="Purple" Text="Blocks to go: 5"/>
                     </StackPanel>
-                </ScrollViewer>
-            </Grid>
-        </Border>
-        <Grid Grid.Row="2">
-            <Border Background="Black" CornerRadius="5" Grid.Row="0" Margin="10,0,10,10" Padding="10">
-                <Grid RowDefinitions="Auto, Auto, Auto">
-                    <Border Grid.Row="0" IsVisible="{Binding !DockerLoaded}" Background="#1a1a1a" CornerRadius="5" Padding="20">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
-                            <TextBlock Text="{Binding StartupMessage}" Foreground="Cyan" FontFamily="Consolas" HorizontalAlignment="Center"/>
-                            <ProgressBar Value="{Binding StartupProgress}" Minimum="0" Maximum="100" Height="20" Width="400" Foreground="Lime" Background="#333" ShowProgressText="True"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
+                        <TextBlock Foreground="Orange" Text="Number of Commands: 3"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <!-- graph thingy to visualize current block -->
+            <Border Background="#1A1A1A" CornerRadius="5" Grid.Row="1" Height="50" Padding="15,0">
+                <Grid ColumnDefinitions="Auto, *">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                        <TextBlock Text="CURRENT NODE:" Foreground="#888" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                        <Ellipse Width="8" Height="8" Fill="{Binding state.ActiveNode.NodeColor, TargetNullValue=Transparent}"/>
+                        <TextBlock Text="{Binding state.ActiveNode.DashboardTitle, TargetNullValue=NONE}" Foreground="{Binding state.ActiveNode.NodeColor, TargetNullValue=#888}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" LetterSpacing="1"/>
+                    </StackPanel>
+                    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="30,0,0,0">
+                        <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
+                            <ItemsControl ItemsSource="{Binding state.GraphNodes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Rectangle Fill="#333" Height="2" VerticalAlignment="Center" Width="40"/>
+                                            <Ellipse Cursor="Hand" Fill="{Binding NodeColor}" Height="15" Stroke="{Binding StrokeColor}" StrokeThickness="2" Width="15" PointerPressed="Node_PointerPressed"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Rectangle Fill="#333" Height="2" VerticalAlignment="Center" Width="40"/>
                         </StackPanel>
-                    </Border>
-                    <ScrollViewer Grid.Row="1" Margin="0,0,0,10">
-                        <TextBlock FontFamily="Consolas, Courier New" Foreground="#00FF00" Text="Instructions"/>
-                    </ScrollViewer>
-                    <ScrollViewer Grid.Row="2">
-                        <Grid RowDefinitions="*, Auto">
-                            <ScrollViewer Grid.Row="0">
-                                <ItemsControl ItemsSource="{Binding History}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Margin="0,0,0,10">
-                                                <TextBlock Text="{Binding Command, StringFormat='root@sys:~$ {0}'}" Foreground="White" Margin="0,0,0,2"/>
-                                                <TextBlock FontFamily="Consolas" Foreground="White" Text="{Binding Output}" TextWrapping="Wrap"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                            <StackPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal" IsVisible="{Binding !IsCommandRunning}">
-                                <TextBlock Foreground="White" Margin="0,5,0,0" Text="root@sys:~$ "/>
-                                <TextBox AcceptsTab="True" Background="Transparent" BorderThickness="0" CaretBrush="White" Classes="NoBorder" FontFamily="Consolas" Foreground="White" Text="{Binding CurrentCommand, Mode=TwoWay}" Width="600" x:Name="Command" IsEnabled="{Binding DockerLoaded}">
-                                    <TextBox.KeyBindings>
-                                        <KeyBinding Command="{Binding ExecuteCommand}" Gesture="Enter"/>
-                                    </TextBox.KeyBindings>
-                                </TextBox>
-                            </StackPanel>
-                            <StackPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal" IsVisible="{Binding IsCommandRunning}">
-                                <TextBlock Foreground="#888" FontFamily="Consolas" Text="(running... press Ctrl+C to interrupt)"/>
-                            </StackPanel>
-                        </Grid>
+                        <!-- add a blocks to go -->
                     </ScrollViewer>
                 </Grid>
             </Border>
-            <!-- Hint -->
-            <Grid HorizontalAlignment="Right" Margin="0,20,20,0" VerticalAlignment="Top" RowDefinitions="Auto, Auto">
-                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
-                    <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenDecisions_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Cyan" Padding="12,8" x:Name="OpenDecisionsButton">
-                        <TextBlock Text="&#x2637; DECISIONS"/>
-                    </Button>
-                    <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenHint_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Yellow" Padding="12,8" x:Name="OpenHintButton">
-                        <TextBlock Text="? HINT"/>
-                    </Button>
-                </StackPanel>
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0" Spacing="10">
-                    <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="250" x:Name="DecisionsPanel" IsVisible="False" Opacity="0">
-                        <Border.Transitions>
-                            <Transitions>
-                                <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
-                            </Transitions>
-                        </Border.Transitions>
-                        <Grid RowDefinitions="Auto, Auto">
-                            <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock FontWeight="Bold" Foreground="Cyan" Text="DECISIONS" VerticalAlignment="Center"/>
-                                <Button Background="Transparent" Click="CloseDecisions_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
+            <Grid Grid.Row="2">
+                <Border Background="Black" CornerRadius="5" Grid.Row="0" Margin="10,0,10,10" Padding="10">
+                    <Grid RowDefinitions="Auto, Auto, Auto">
+                        <Border Grid.Row="0" IsVisible="{Binding !DockerLoaded}" Background="#1a1a1a" CornerRadius="5" Padding="20">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="{Binding StartupMessage}" Foreground="Cyan" FontFamily="Consolas" HorizontalAlignment="Center"/>
+                                <ProgressBar Value="{Binding StartupProgress}" Minimum="0" Maximum="100" Height="20" Width="400" Foreground="Lime" Background="#333" ShowProgressText="True"/>
+                            </StackPanel>
+                        </Border>
+                        <ScrollViewer Grid.Row="1" Margin="0,0,0,10">
+                            <TextBlock FontFamily="Consolas, Courier New" Foreground="#00FF00" Text="Instructions"/>
+                        </ScrollViewer>
+                        <ScrollViewer Grid.Row="2">
+                            <Grid RowDefinitions="*, Auto">
+                                <ScrollViewer Grid.Row="0">
+                                    <ItemsControl ItemsSource="{Binding History}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,0,0,10">
+                                                    <TextBlock Text="{Binding Command, StringFormat='root@sys:~$ {0}'}" Foreground="White" Margin="0,0,0,2"/>
+                                                    <TextBlock FontFamily="Consolas" Foreground="White" Text="{Binding Output}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                                <StackPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal" IsVisible="{Binding !IsCommandRunning}">
+                                    <TextBlock Foreground="White" Margin="0,5,0,0" Text="root@sys:~$ "/>
+                                    <TextBox AcceptsTab="True" Background="Transparent" BorderThickness="0" CaretBrush="White" Classes="NoBorder" FontFamily="Consolas" Foreground="White" Text="{Binding CurrentCommand, Mode=TwoWay}" Width="600" x:Name="Command" IsEnabled="{Binding DockerLoaded}">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Command="{Binding ExecuteCommand}" Gesture="Enter"/>
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal" IsVisible="{Binding IsCommandRunning}">
+                                    <TextBlock Foreground="#888" FontFamily="Consolas" Text="(running... press Ctrl+C to interrupt)"/>
+                                </StackPanel>
                             </Grid>
-                            <TextBlock Foreground="White" Grid.Row="1" Text="Your active decisions and branches will go here." TextWrapping="Wrap"/>
-                        </Grid>
-                    </Border>
-                    <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="200" x:Name="HintPanel" IsVisible="False" Opacity="0">
-                        <Border.Transitions>
-                            <Transitions>
-                                <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
-                            </Transitions>
-                        </Border.Transitions>
-                        <Grid RowDefinitions="Auto, Auto">
-                            <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,5">
-                                <TextBlock FontWeight="Bold" Foreground="Yellow" Text="HINT" VerticalAlignment="Center"/>
-                                <Button Background="Transparent" Click="CloseHint_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
-                            </Grid>
-                            <TextBlock Foreground="White" Grid.Row="1" Text="Check the red node in the diagram. It requires a manual override command." TextWrapping="Wrap"/>
-                        </Grid>
-                    </Border>
-                </StackPanel>
-            </Grid>
-        </Grid>
-        <Border x:Name="NodeDetailsCard" Grid.Row="2" Background="#1E1E24" BorderBrush="#444" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0" Width="350" Opacity="0" IsHitTestVisible="False">
-            <Border.Transitions>
-                <Transitions>
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.25"/>
-                    <ThicknessTransition Property="Margin" Duration="0:0:0.3"/>
-                </Transitions>
-            </Border.Transitions>
-            <Grid RowDefinitions="Auto, Auto, Auto">
-                <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,10">
-                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <Ellipse x:Name="NodeDetailsIcon" Width="10" Height="10" Fill="Cyan"/>
-                        <TextBlock x:Name="NodeInfoTitle" FontWeight="Bold" FontSize="14" LetterSpacing="1"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+                <!-- Hint -->
+                <Grid HorizontalAlignment="Right" Margin="0,20,20,0" VerticalAlignment="Top" RowDefinitions="Auto, Auto">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                        <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenDecisions_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Cyan" Padding="12,8" x:Name="OpenDecisionsButton">
+                            <TextBlock Text="&#x2637; DECISIONS"/>
+                        </Button>
+                        <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenHint_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Yellow" Padding="12,8" x:Name="OpenHintButton">
+                            <TextBlock Text="? HINT"/>
+                        </Button>
                     </StackPanel>
-                    <Button Background="Transparent" Click="CloseNodeDetails_Click" Content="&#x2715;" Cursor="Hand" Foreground="#888" Grid.Column="1" Padding="5,0"/>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0" Spacing="10">
+                        <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="250" x:Name="DecisionsPanel" IsVisible="False" Opacity="0">
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                                </Transitions>
+                            </Border.Transitions>
+                            <Grid RowDefinitions="Auto, Auto">
+                                <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,10">
+                                    <TextBlock FontWeight="Bold" Foreground="Cyan" Text="DECISIONS" VerticalAlignment="Center"/>
+                                    <Button Background="Transparent" Click="CloseDecisions_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
+                                </Grid>
+                                <TextBlock Foreground="White" Grid.Row="1" Text="Your active decisions and branches will go here." TextWrapping="Wrap"/>
+                            </Grid>
+                        </Border>
+                        <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="200" x:Name="HintPanel" IsVisible="False" Opacity="0">
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                                </Transitions>
+                            </Border.Transitions>
+                            <Grid RowDefinitions="Auto, Auto">
+                                <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,5">
+                                    <TextBlock FontWeight="Bold" Foreground="Yellow" Text="HINT" VerticalAlignment="Center"/>
+                                    <Button Background="Transparent" Click="CloseHint_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
+                                </Grid>
+                                <TextBlock Foreground="White" Grid.Row="1" Text="Check the red node in the diagram. It requires a manual override command." TextWrapping="Wrap"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
                 </Grid>
-                <Rectangle Grid.Row="1" Height="1" Fill="#333" Margin="0,0,0,12"/>
-                <TextBlock x:Name="NodeInfoDescription" Grid.Row="2" Foreground="#D0D0D0" FontSize="13" TextWrapping="Wrap" LineHeight="20"/>
             </Grid>
-        </Border>
-    </Grid>
+            <Border x:Name="NodeDetailsCard" Grid.Row="2" Background="#1E1E24" BorderBrush="#444" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0" Width="350" Opacity="0" IsHitTestVisible="False">
+                <Border.Transitions>
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.25"/>
+                        <ThicknessTransition Property="Margin" Duration="0:0:0.3"/>
+                    </Transitions>
+                </Border.Transitions>
+                <Grid RowDefinitions="Auto, Auto, Auto">
+                    <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Ellipse x:Name="NodeDetailsIcon" Width="10" Height="10" Fill="Cyan"/>
+                            <TextBlock x:Name="NodeInfoTitle" FontWeight="Bold" FontSize="14" LetterSpacing="1"/>
+                        </StackPanel>
+                        <Button Background="Transparent" Click="CloseNodeDetails_Click" Content="&#x2715;" Cursor="Hand" Foreground="#888" Grid.Column="1" Padding="5,0"/>
+                    </Grid>
+                    <Rectangle Grid.Row="1" Height="1" Fill="#333" Margin="0,0,0,12"/>
+                    <TextBlock x:Name="NodeInfoDescription" Grid.Row="2" Foreground="#D0D0D0" FontSize="13" TextWrapping="Wrap" LineHeight="20"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </DockPanel>
 </Window>

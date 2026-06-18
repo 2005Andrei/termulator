@@ -40,6 +40,9 @@ public class Block
     public string instructions { get; set; }
     public string[] penalties { get; set; }
 
+    public void setDecisions() { // json object and check for conditions that satisfy the current player stats
+    }
+
     public Dictionary<string, int> commandEntered(string currentCommand) // returns next block if current decision is completed
     {
         // won't check for order, or not yet at least
@@ -70,6 +73,8 @@ public class Block
             { "evidence", 0 },
             { "reputation", 0 },
         };
+
+        // here i search in the block to return the current subtractions/additions, and I add/subtract them in mainwindowviewmodel
 
         return computed_penalties;
     }
