@@ -23,11 +23,12 @@
                 <Grid ColumnDefinitions="*, Auto">
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
                         <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN"/>
-                        <TextBlock Foreground="Lime" Text="CPU: 45%"/>
-                        <TextBlock Foreground="Purple" Text="Blocks to go: 5"/>
+                        <TextBlock Foreground="Lime" Text="{Binding state.Efficiency, StringFormat='EFFICIENCY: {0}%'}"/>
+                        <TextBlock Foreground="Purple" Text="{Binding state.Knowledge, StringFormat='KNOWLEDGE: {0}'}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
-                        <TextBlock Foreground="Orange" Text="Number of Commands: 3"/>
+                        <TextBlock Foreground="Orange" Text="{Binding state.Evidence, StringFormat='EVIDENCE: {0}'}"/>
+                        <TextBlock Foreground="Gold" Text="{Binding state.Reputation, StringFormat='REPUTATION: {0}'}"/>
                     </StackPanel>
                 </Grid>
             </Border>

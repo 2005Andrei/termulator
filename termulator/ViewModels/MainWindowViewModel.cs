@@ -17,9 +17,6 @@ public partial class MainWindowViewModel : ObservableObject
     // graph logic
     public ObservableCollection<GraphNode> GraphNodes { get; } = new();
 
-    // [ObservableProperty]
-    // private GraphNode? _activeNode;
-
     [ObservableProperty]
     private string _currentCommand = string.Empty;
 
@@ -121,6 +118,8 @@ public partial class MainWindowViewModel : ObservableObject
             _commandCts = null;
             IsCommandRunning = false;
         }
+
+        // state.
     }
 
     [RelayCommand]

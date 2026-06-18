@@ -21,6 +21,18 @@ public partial class State : ObservableObject
     [ObservableProperty]
     private GraphNode? _activeNode;
 
+    [ObservableProperty]
+    private int efficiency = 0;
+
+    [ObservableProperty]
+    private int knowledge = 0;
+
+    [ObservableProperty]
+    private int evidence = 0;
+
+    [ObservableProperty]
+    private int reputation = 0;
+
     public State()
     {
         // graph nodes should also have conditions in them
@@ -88,5 +100,10 @@ public partial class State : ObservableObject
         }
     }
 
-    public void commandEntered(string currentCommand) { }
+    public void assessCommand(string currentCommand)
+    {
+        // go to current block
+        // get the penalties for the current block
+        // add the penalties with the current metrics
+    }
 }
