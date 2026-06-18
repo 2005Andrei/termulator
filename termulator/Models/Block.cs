@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace termulator.ViewModels;
 
@@ -16,18 +17,31 @@ public class CommandResult
     public bool AdvanceToNextBlock { get; set; } = false;
     public string NextBlockUid { get; set; } = string.Empty;
     public StatModifiers Deltas { get; set; } = new();
+
+    public bool WasCorrectStep { get; set; } = false;
 }
 
 public class Decision
 {
     public List<string> command_sequence { get; set; } = new List<string>();
     public string next_block_uid { get; set; } = string.Empty;
-
     public StatModifiers rewards { get; set; } = new();
 
-    public bool isCommandHere(string command)
+    [JsonIgnore]
+    public int current_step { get; set; } = 0;
+
+    public bool IsNextCommand(string command)
     {
-        return command_sequence.Contains(command);
+        if (current_step < command_sequence.Count)
+        {
+            return command_sequence[current_step] == command;
+        }
+        return false;
+    }
+
+    public bool IsFinished()
+    {
+        return current_step >= command_sequence.Count;
     }
 }
 
@@ -48,18 +62,35 @@ public class Block
     public CommandResult commandEntered(string currentCommand)
     {
         var result = new CommandResult();
+        bool correctStepTaken = false;
 
-        int found = decisions.FindIndex(d => d.isCommandHere(currentCommand));
-
-        if (found != -1)
+        foreach (var decision in decisions)
         {
-            result.AdvanceToNextBlock = true;
-            result.NextBlockUid = decisions[found].next_block_uid;
-            result.Deltas = decisions[found].rewards;
+            if (decision.IsNextCommand(currentCommand))
+            {
+                decision.current_step++;
+                correctStepTaken = true;
+
+                if (decision.IsFinished())
+                {
+                    result.AdvanceToNextBlock = true;
+                    result.NextBlockUid = decision.next_block_uid;
+                    result.Deltas = decision.rewards;
+
+                    return result;
+                }
+            }
+        }
+
+        if (correctStepTaken)
+        {
+            result.AdvanceToNextBlock = false;
+            result.WasCorrectStep = true;
         }
         else
         {
             result.AdvanceToNextBlock = false;
+            result.WasCorrectStep = false;
             result.Deltas = wrong_command_penalties;
         }
 
