@@ -131,7 +131,7 @@ public partial class MainWindowViewModel : ObservableObject
             IsCommandRunning = false;
         }
 
-        // state.
+        state.assessCommand(commandToRun);
     }
 
     [RelayCommand]

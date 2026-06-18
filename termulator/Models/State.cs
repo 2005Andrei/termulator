@@ -18,20 +18,22 @@ public partial class State : ObservableObject
 
     public ObservableCollection<GraphNode> GraphNodes { get; } = new();
 
+    public Block? CurrentBlock { get; set; }
+
     [ObservableProperty]
     private GraphNode? _activeNode;
 
     [ObservableProperty]
-    private int efficiency = 0;
+    private int _efficiency = 0;
 
     [ObservableProperty]
-    private int knowledge = 0;
+    private int _knowledge = 0;
 
     [ObservableProperty]
-    private int evidence = 0;
+    private int _evidence = 0;
 
     [ObservableProperty]
-    private int reputation = 0;
+    private int _reputation = 0;
 
     public State()
     {
@@ -73,6 +75,19 @@ public partial class State : ObservableObject
         GraphNodes.Add(new GraphNode());
 
         SetActiveNode();
+
+        CurrentBlock = new Block
+        {
+            g_uid = "block_1",
+            decisions = new List<Decision>
+            {
+                new Decision
+                {
+                    command_sequence = new List<string> { "override sys" },
+                    next_block_uid = "block_2",
+                },
+            },
+        };
     }
 
     public void SetActiveNode()
@@ -105,6 +120,20 @@ public partial class State : ObservableObject
         // go to current block
         // get the penalties for the current block
         // add the penalties with the current metrics
+
+        var result = CurrentBlock?.commandEntered(currentCommand);
+
+        Efficiency += result.EfficiencyDelta;
+        Knowledge += result.KnowledgeDelta;
+
+        Console.WriteLine($"Stats updated: Efficiency={Efficiency}, Knowledge={Knowledge}");
+
+        if (result.AdvanceToNextBlock)
+        {
+            Console.WriteLine($"Decision correct! Moving to {result.NextBlockUid}");
+
+            SetActiveNode();
+        }
     }
 
     public void setPenalties()
