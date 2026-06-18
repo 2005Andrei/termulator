@@ -38,7 +38,7 @@ public partial class State : ObservableObject
 
     public State()
     {
-        SetActiveNode();
+        // SetActiveNode();
     }
 
     public void SetActiveNode()
@@ -142,12 +142,12 @@ public partial class State : ObservableObject
             }
             else
             {
-                Console.WriteLine("CRITICAL ERROR: Start block UID not found in JSON.");
+                Console.WriteLine("cirticial error");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load story: {ex.Message}");
+            Console.WriteLine($"fah {ex.Message}");
         }
     }
 
