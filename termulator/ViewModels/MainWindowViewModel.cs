@@ -133,18 +133,23 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         string stateFeedback = state.assessCommand(commandToRun);
-        
+
         if (!string.IsNullOrWhiteSpace(stateFeedback))
         {
-            if (sb.Length > 0) 
+            if (sb.Length > 0)
             {
                 sb.AppendLine();
-                sb.AppendLine(); 
+                sb.AppendLine();
             }
-            
+
             sb.AppendLine(stateFeedback);
-            
+
             entry.Output = sb.ToString().TrimEnd();
+        }
+
+        if (state.IsGameOver)
+        {
+            InitiateShutdownSequence();
         }
     }
 
@@ -218,5 +223,19 @@ public partial class MainWindowViewModel : ObservableObject
         // {
         //     desktopApp.Shutdown();
         // }
+    }
+
+    private async void InitiateShutdownSequence()
+    {
+        Console.WriteLine("Initiating shutdown sequence...");
+
+        DockerLoaded = false;
+        _commandCts?.Cancel();
+        engine.SendInterrupt();
+
+        await Task.Delay(5000);
+        Console.WriteLine("Goodbye.");
+
+        Environment.Exit(0);
     }
 }

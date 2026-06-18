@@ -73,7 +73,10 @@
                             </StackPanel>
                         </Border>
                         <ScrollViewer Grid.Row="1" Margin="0,0,0,10">
-                            <TextBlock FontFamily="Consolas, Courier New" Foreground="#00FF00" Text="Instructions"/>
+                            <Grid RowDefinitions="Auto, Auto">
+                                <TextBlock Grid.Row="0" FontFamily="Consolas, Courier New" Foreground="#00FF00" Text="Instructions"/>
+                                <TextBlock Grid.Row="1" FontFamily="Consolas, Courier New" Foreground="#00FF00" Text="{Binding state.CurrentBlock.instructions, TargetNullValue='Awaiting System Initialization...'}"/>
+                            </Grid>
                         </ScrollViewer>
                         <ScrollViewer Grid.Row="2">
                             <Grid RowDefinitions="*, Auto">
@@ -126,7 +129,22 @@
                                     <TextBlock FontWeight="Bold" Foreground="Cyan" Text="DECISIONS" VerticalAlignment="Center"/>
                                     <Button Background="Transparent" Click="CloseDecisions_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
                                 </Grid>
-                                <TextBlock Foreground="White" Grid.Row="1" Text="Your active decisions and branches will go here." TextWrapping="Wrap"/>
+                                <ItemsControl Grid.Row="1" ItemsSource="{Binding state.CurrentBlock.decisions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Spacing="4" Margin="0,0,0,12">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="&gt;" Foreground="#555" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding description}" Foreground="White" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="15,0,0,0">
+                                                    <TextBlock Text="REQ:" Foreground="#888" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding CommandSequenceDisplay}" Foreground="Cyan" FontFamily="Consolas" FontSize="12" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </Grid>
                         </Border>
                         <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="200" x:Name="HintPanel" IsVisible="False" Opacity="0">
@@ -140,7 +158,7 @@
                                     <TextBlock FontWeight="Bold" Foreground="Yellow" Text="HINT" VerticalAlignment="Center"/>
                                     <Button Background="Transparent" Click="CloseHint_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
                                 </Grid>
-                                <TextBlock Foreground="White" Grid.Row="1" Text="Check the red node in the diagram. It requires a manual override command." TextWrapping="Wrap"/>
+                                <TextBlock Foreground="White" Grid.Row="1" TextWrapping="Wrap" Text="{Binding state.CurrentBlock.hint, TargetNullValue='No hint available for this block.'}"/>
                             </Grid>
                         </Border>
                     </StackPanel>

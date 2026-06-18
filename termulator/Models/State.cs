@@ -19,7 +19,13 @@ public partial class State : ObservableObject
     private Dictionary<string, Block> _blockDict = new();
     public ObservableCollection<GraphNode> GraphNodes { get; } = new();
 
-    public Block? CurrentBlock { get; set; }
+    private StatModifiers _minStats = new();
+    private StatModifiers _maxStats = new();
+    private ConditionNode? _deathCondition;
+    private string _deathBlockUid = string.Empty;
+
+    [ObservableProperty]
+    public Block? _currentBlock;
 
     [ObservableProperty]
     private GraphNode? _activeNode;
@@ -35,6 +41,8 @@ public partial class State : ObservableObject
 
     [ObservableProperty]
     private int _reputation = 0;
+
+    public bool IsGameOver { get; private set; } = false;
 
     public State()
     {
@@ -79,6 +87,19 @@ public partial class State : ObservableObject
         Evidence += result.Deltas.evidence;
         Reputation += result.Deltas.reputation;
 
+        ClampStats();
+
+        if (_deathCondition != null && _deathCondition.Evaluate(this))
+        {
+            if (_blockDict.TryGetValue(_deathBlockUid, out Block? deathBlock))
+            {
+                CurrentBlock = deathBlock;
+                SetActiveNodeByUid(CurrentBlock.g_uid);
+                IsGameOver = true;
+                return "\n[SYSTEM ALERT] CRITICAL METRICS FAILURE. INITIATING SHUTDOWN SEQUENCE...\n In other words: YOU LOST";
+            }
+        }
+
         if (result.AdvanceToNextBlock)
         {
             if (result.NextBlockUid == "0")
@@ -90,16 +111,23 @@ public partial class State : ObservableObject
             {
                 CurrentBlock = nextBlock;
                 SetActiveNodeByUid(CurrentBlock.g_uid);
-
                 return $"\n[SYSTEM] Advanced to {CurrentBlock.ui_dashboard_title}\n";
             }
-            else
+            else // shouldn't happen
             {
                 return $"\n[ERROR] CRITICAL FAULT: Block {result.NextBlockUid} not found.\n";
             }
         }
 
         return string.Empty;
+    }
+
+    private void ClampStats()
+    {
+        Efficiency = Math.Clamp(Efficiency, _minStats.efficiency, _maxStats.efficiency);
+        Knowledge = Math.Clamp(Knowledge, _minStats.knowledge, _maxStats.knowledge);
+        Evidence = Math.Clamp(Evidence, _minStats.evidence, _maxStats.evidence);
+        Reputation = Math.Clamp(Reputation, _minStats.reputation, _maxStats.reputation);
     }
 
     public void setPenalties()
@@ -128,6 +156,16 @@ public partial class State : ObservableObject
 
             _blockDict.Clear();
             GraphNodes.Clear();
+
+            _minStats = storyData.min_stats ?? new StatModifiers();
+            _maxStats = storyData.max_stats ?? new StatModifiers();
+            _deathCondition = storyData.death_condition;
+            _deathBlockUid = storyData.death_block_uid;
+
+            Efficiency = storyData.initial_stats?.efficiency ?? 50;
+            Knowledge = storyData.initial_stats?.knowledge ?? 10;
+            Evidence = storyData.initial_stats?.evidence ?? 0;
+            Reputation = storyData.initial_stats?.reputation ?? 0;
 
             foreach (var block in storyData.blocks)
             {
