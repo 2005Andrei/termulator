@@ -12,22 +12,46 @@
     <Grid RowDefinitions="Auto, Auto, *">
         <!-- stats -->
         <Border Background="#1E1E1E" BorderBrush="#333" BorderThickness="0,0,0,1" Grid.Row="0" Padding="15,10">
-            <StackPanel Orientation="Horizontal" Spacing="20">
-                <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN"/>
-                <TextBlock Foreground="Lime" Text="CPU: 45%"/>
-                <TextBlock Foreground="Orange" Text="Number of Commands: 3"/>
-                <TextBlock Foreground="Purple" Text="Blocks to go: 5"/>
-            </StackPanel>
+            <Grid ColumnDefinitions="*, Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
+                    <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN"/>
+                    <TextBlock Foreground="Lime" Text="CPU: 45%"/>
+                    <TextBlock Foreground="Purple" Text="Blocks to go: 5"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
+                    <TextBlock Foreground="Orange" Text="Number of Commands: 3"/>
+                </StackPanel>
+            </Grid>
         </Border>
         <!-- graph thingy to visualize current block -->
-        <Border Background="#1A1A1A" CornerRadius="5" Grid.Row="1" Height="50">
-            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" VerticalAlignment="Center">
-                <Rectangle Fill="Gray" Height="2" VerticalAlignment="Center" Width="50"/>
-                <Ellipse Cursor="Hand" Fill="Cyan" Height="15" Stroke="White" StrokeThickness="2" Width="15"/>
-                <Rectangle Fill="Gray" Height="2" VerticalAlignment="Center" Width="50"/>
-                <Ellipse Cursor="Hand" Fill="Red" Height="15" Stroke="White" StrokeThickness="2" Width="15"/>
-                <Rectangle Fill="Gray" Height="2" VerticalAlignment="Center" Width="50"/>
-            </StackPanel>
+        <Border Background="#1A1A1A" CornerRadius="5" Grid.Row="1" Height="50" Padding="15,0">
+            <Grid ColumnDefinitions="Auto, *">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                    <TextBlock Text="CURRENT NODE:" Foreground="#888" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                    <Ellipse Width="8" Height="8" Fill="{Binding ActiveNode.NodeColor, TargetNullValue=Transparent}"/>
+                    <TextBlock Text="{Binding ActiveNode.DashboardTitle, TargetNullValue=NONE}" Foreground="{Binding ActiveNode.NodeColor, TargetNullValue=#888}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" LetterSpacing="1"/>
+                </StackPanel>
+                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="30,0,0,0">
+                    <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
+                        <ItemsControl ItemsSource="{Binding GraphNodes}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Rectangle Fill="#333" Height="2" VerticalAlignment="Center" Width="40"/>
+                                        <Ellipse Cursor="Hand" Fill="{Binding NodeColor}" Height="15" Stroke="{Binding StrokeColor}" StrokeThickness="2" Width="15" PointerPressed="Node_PointerPressed"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Rectangle Fill="#333" Height="2" VerticalAlignment="Center" Width="40"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Border>
         <Grid Grid.Row="2">
             <Border Background="Black" CornerRadius="5" Grid.Row="0" Margin="10,0,10,10" Padding="10">
@@ -71,20 +95,65 @@
                 </Grid>
             </Border>
             <!-- Hint -->
-            <Grid HorizontalAlignment="Right" Margin="0,20,20,0" VerticalAlignment="Top">
-                <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenHint_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Yellow" IsVisible="True" Padding="12,8" x:Name="OpenHintButton">
-                    <TextBlock Text="? HINT"/>
-                </Button>
-                <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="200" x:Name="HintPanel" IsVisible="False">
-                    <Grid RowDefinitions="Auto, Auto">
-                        <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,5">
-                            <TextBlock FontWeight="Bold" Foreground="Yellow" Text="HINT" VerticalAlignment="Center"/>
-                            <Button Background="Transparent" Click="CloseHint_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
+            <Grid HorizontalAlignment="Right" Margin="0,20,20,0" VerticalAlignment="Top" RowDefinitions="Auto, Auto">
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                    <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenDecisions_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Cyan" Padding="12,8" x:Name="OpenDecisionsButton">
+                        <TextBlock Text="&#x2637; DECISIONS"/>
+                    </Button>
+                    <Button Background="#2D2D30" BorderBrush="#555" BorderThickness="1" Click="OpenHint_Click" CornerRadius="8" Cursor="Hand" FontWeight="Bold" Foreground="Yellow" Padding="12,8" x:Name="OpenHintButton">
+                        <TextBlock Text="? HINT"/>
+                    </Button>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0" Spacing="10">
+                    <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="250" x:Name="DecisionsPanel" IsVisible="False" Opacity="0">
+                        <Border.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                            </Transitions>
+                        </Border.Transitions>
+                        <Grid RowDefinitions="Auto, Auto">
+                            <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,10">
+                                <TextBlock FontWeight="Bold" Foreground="Cyan" Text="DECISIONS" VerticalAlignment="Center"/>
+                                <Button Background="Transparent" Click="CloseDecisions_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
+                            </Grid>
+                            <TextBlock Foreground="White" Grid.Row="1" Text="Your active decisions and branches will go here." TextWrapping="Wrap"/>
                         </Grid>
-                        <TextBlock Foreground="White" Grid.Row="1" Text="Check the red node in the diagram. It requires a manual override command." TextWrapping="Wrap"/>
-                    </Grid>
-                </Border>
+                    </Border>
+                    <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="15" Width="200" x:Name="HintPanel" IsVisible="False" Opacity="0">
+                        <Border.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                            </Transitions>
+                        </Border.Transitions>
+                        <Grid RowDefinitions="Auto, Auto">
+                            <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,5">
+                                <TextBlock FontWeight="Bold" Foreground="Yellow" Text="HINT" VerticalAlignment="Center"/>
+                                <Button Background="Transparent" Click="CloseHint_Click" Content="&#x2715;" Cursor="Hand" Foreground="#AAA" Grid.Column="1" Padding="5,0"/>
+                            </Grid>
+                            <TextBlock Foreground="White" Grid.Row="1" Text="Check the red node in the diagram. It requires a manual override command." TextWrapping="Wrap"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Grid>
+        <Border x:Name="NodeDetailsCard" Grid.Row="2" Background="#1E1E24" BorderBrush="#444" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0" Width="350" Opacity="0" IsHitTestVisible="False">
+            <Border.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.25"/>
+                    <ThicknessTransition Property="Margin" Duration="0:0:0.3"/>
+                </Transitions>
+            </Border.Transitions>
+            <Grid RowDefinitions="Auto, Auto, Auto">
+                <Grid ColumnDefinitions="*, Auto" Grid.Row="0" Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Ellipse x:Name="NodeDetailsIcon" Width="10" Height="10" Fill="Cyan"/>
+                        <TextBlock x:Name="NodeInfoTitle" FontWeight="Bold" FontSize="14" LetterSpacing="1"/>
+                    </StackPanel>
+                    <Button Background="Transparent" Click="CloseNodeDetails_Click" Content="&#x2715;" Cursor="Hand" Foreground="#888" Grid.Column="1" Padding="5,0"/>
+                </Grid>
+                <Rectangle Grid.Row="1" Height="1" Fill="#333" Margin="0,0,0,12"/>
+                <TextBlock x:Name="NodeInfoDescription" Grid.Row="2" Foreground="#D0D0D0" FontSize="13" TextWrapping="Wrap" LineHeight="20"/>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
