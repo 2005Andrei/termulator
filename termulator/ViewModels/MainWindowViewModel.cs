@@ -69,12 +69,13 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public void loadState(string filePath)
+    public void loadStory(string filePath)
     {
-        Console.WriteLine("load previous game state");
+        state.loadStory(filePath);
+        Console.WriteLine("loading story in mainwindowviewmodel");
     }
 
-    public void loadStory(string filePath)
+    public void loadState(string filePath)
     {
         Console.WriteLine("load story");
     }

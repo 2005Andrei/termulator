@@ -140,4 +140,6 @@ public partial class State : ObservableObject
     {
         // get the dict from the block class and modify the state variables
     }
+
+    public void loadStory(string filePath) { }
 }
