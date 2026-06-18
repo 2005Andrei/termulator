@@ -134,20 +134,20 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     // menu stuff
-
-    public void LoadState()
+    public async Task LoadState()
     {
-        ReturnToStartWindow();
+        await ReturnToStartWindowAsync();
     }
 
-    public void OpenStory()
+    public async Task OpenStory()
     {
-        ReturnToStartWindow();
+        await ReturnToStartWindowAsync();
     }
 
-    // Centralized method to handle the window swap
-    private void ReturnToStartWindow()
+    private async Task ReturnToStartWindowAsync()
     {
+        await engine.ShutOffAsync();
+
         if (
             Application.Current?.ApplicationLifetime
             is IClassicDesktopStyleApplicationLifetime desktopApp
@@ -155,20 +155,27 @@ public partial class MainWindowViewModel : ObservableObject
         {
             var currentTerminalWindow = desktopApp.MainWindow;
 
-            // 1. Create a new StartWindow, passing your StartGame logic back into it
-            var startWindow = new StartWindow(this.StartGame)
+            var startWindow = new StartWindow(
+                async (filePath) =>
+                {
+                    var newViewModel = new MainWindowViewModel();
+                    var newMainWindow = new MainWindow { DataContext = newViewModel };
+
+                    desktopApp.MainWindow = newMainWindow;
+                    newMainWindow.Show();
+
+                    await newViewModel.StartGame(filePath);
+                }
+            )
             {
                 DataContext = new StartWindowViewModel(),
-                SkipIntro = true, // Fast-forward straight to the file picker
+                SkipIntro = true,
             };
 
-            // 2. Set the new window as the application's Main Window
             desktopApp.MainWindow = startWindow;
 
-            // 3. Show the new StartWindow
             startWindow.Show();
 
-            // 4. Close the old Terminal Window
             currentTerminalWindow?.Close();
         }
     }

@@ -106,4 +106,9 @@ public partial class State : ObservableObject
         // get the penalties for the current block
         // add the penalties with the current metrics
     }
+
+    public void setPenalties()
+    {
+        // get the dict from the block class and modify the state variables
+    }
 }

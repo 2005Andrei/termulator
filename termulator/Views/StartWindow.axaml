@@ -31,20 +31,31 @@
                 <TextBlock Text="You must have Docker installed and running on your system to use Termulator." TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300"/>
             </StackPanel>
         </Border>
-        <Border BorderBrush="Black" BorderThickness="2" IsVisible="{Binding LoadZip}">
-            <Grid RowDefinitions="*, Auto" Margin="15">
-                <StackPanel Grid.Row="0" VerticalAlignment="Center" Spacing="10">
-                    <TextBlock Text="Select a zip from your computer." FontStyle="Italic" Opacity="0.7" HorizontalAlignment="Center" IsVisible="{Binding !HasFile}"/>
-                    <StackPanel Spacing="4" IsVisible="{Binding HasFile}">
-                        <TextBlock Text="Selected File:" FontSize="12" FontWeight="SemiBold"/>
-                        <Border Background="#1A000000" CornerRadius="4" Padding="8">
-                            <TextBlock Text="{Binding FilePath}" TextTrimming="CharacterEllipsis" FontSize="12" ToolTip.Tip="{Binding FilePath}"/>
-                        </Border>
-                    </StackPanel>
-                    <Button Content="Browse Files..." Click="fileBtn" HorizontalAlignment="Center" Padding="16,6"/>
+        <Border Background="#151515" BorderBrush="#333" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400" IsVisible="{Binding LoadZip}">
+            <StackPanel Spacing="16">
+                <TextBlock Text="SYSTEM INITIALIZATION" Foreground="Cyan" FontWeight="Bold" FontSize="14" LetterSpacing="1"/>
+                <Rectangle Height="1" Fill="#333" HorizontalAlignment="Stretch" Margin="0,-4,0,4"/>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="SELECT BOOT MODE" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
+                    <ComboBox HorizontalAlignment="Stretch" SelectedIndex="0" Background="#222" BorderBrush="#444" Foreground="#EEE" CornerRadius="4" Padding="10,8">
+                        <ComboBoxItem Content="Load Story"/>
+                        <ComboBoxItem Content="Load State"/>
+                    </ComboBox>
                 </StackPanel>
-                <Button Grid.Row="1" Content="Next..." Click="submitBtn" IsEnabled="{Binding HasFile}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10"/>
-            </Grid>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="TARGET DATA FILE (.ZIP)" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Border Grid.Column="0" Background="#1A1A1A" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,8,0">
+                            <Grid>
+                                <TextBlock Text="Select a zip from your computer..." FontStyle="Italic" Foreground="#555" VerticalAlignment="Center" IsVisible="{Binding !HasFile}"/>
+                                <TextBlock Text="{Binding FilePath}" Foreground="#EEE" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding FilePath}" IsVisible="{Binding HasFile}"/>
+                            </Grid>
+                        </Border>
+                        <Button Grid.Column="1" Content="BROWSE..." Click="fileBtn" Background="#333" Foreground="#EEE" BorderThickness="1" BorderBrush="#555" CornerRadius="4" Padding="15,8" Cursor="Hand"/>
+                    </Grid>
+                </StackPanel>
+                <Button Content="START SEQUENCE" Click="submitBtn" IsEnabled="{Binding HasFile}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#004D40" Foreground="Lime" BorderBrush="Lime" BorderThickness="1" CornerRadius="4" Padding="0,12" Margin="0,8,0,0" FontWeight="Bold" LetterSpacing="1" Cursor="Hand"/>
+            </StackPanel>
         </Border>
     </Panel>
 </Window>

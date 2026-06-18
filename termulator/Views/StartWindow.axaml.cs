@@ -15,7 +15,7 @@ public partial class StartWindow : Window
 {
     private readonly Func<string, Task>? _mainAction;
 
-    public bool SkipIntro { get; set; } = false;
+    public bool SkipIntro { get; set; } = true; // REMEMBER TO CHECK BACK TO FALSE
 
     public StartWindow() { }
 
