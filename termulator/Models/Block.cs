@@ -3,19 +3,27 @@ using System.Text.Json;
 
 namespace termulator.ViewModels;
 
+public class StatModifiers
+{
+    public int efficiency { get; set; } = 0;
+    public int knowledge { get; set; } = 0;
+    public int evidence { get; set; } = 0;
+    public int reputation { get; set; } = 0;
+}
+
 public class CommandResult
 {
     public bool AdvanceToNextBlock { get; set; } = false;
     public string NextBlockUid { get; set; } = string.Empty;
-    public int EfficiencyDelta { get; set; } = 0;
-    public int KnowledgeDelta { get; set; } = 0;
+    public StatModifiers Deltas { get; set; } = new();
 }
 
 public class Decision
 {
     public List<string> command_sequence { get; set; } = new List<string>();
     public string next_block_uid { get; set; } = string.Empty;
-    public int counter { get; set; } = 0;
+
+    public StatModifiers rewards { get; set; } = new();
 
     public bool isCommandHere(string command)
     {
@@ -26,8 +34,16 @@ public class Decision
 public class Block
 {
     public string g_uid { get; set; } = string.Empty;
-    public List<Decision> decisions { get; set; } = new List<Decision>();
     public string instructions { get; set; } = string.Empty;
+
+    public string ui_color { get; set; } = "Gray";
+    public string ui_dashboard_title { get; set; } = "UNKNOWN";
+    public string ui_card_title { get; set; } = "BLOCK PENDING";
+    public string ui_card_description { get; set; } = "Description missing.";
+
+    public StatModifiers wrong_command_penalties { get; set; } = new();
+
+    public List<Decision> decisions { get; set; } = new List<Decision>();
 
     public CommandResult commandEntered(string currentCommand)
     {
@@ -39,18 +55,22 @@ public class Block
         {
             result.AdvanceToNextBlock = true;
             result.NextBlockUid = decisions[found].next_block_uid;
-
-            result.EfficiencyDelta = 10;
-            result.KnowledgeDelta = 5;
+            result.Deltas = decisions[found].rewards;
         }
         else
         {
             result.AdvanceToNextBlock = false;
-            result.EfficiencyDelta = -5;
+            result.Deltas = wrong_command_penalties;
         }
 
         return result;
     }
+}
+
+public class StorySchema
+{
+    public string start_block_uid { get; set; } = string.Empty;
+    public List<Block> blocks { get; set; } = new List<Block>();
 }
 
 

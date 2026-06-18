@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace termulator.ViewModels;
 
 public partial class State : ObservableObject
 {
-    public Collection<Block> blocks { get; } = new();
-
     // list of blocks
     // efficiency, knowledge, evidence, reputation
 
@@ -16,6 +16,7 @@ public partial class State : ObservableObject
 
     // then probably a method to load stuff from json files
 
+    private Dictionary<string, Block> _blockDict = new();
     public ObservableCollection<GraphNode> GraphNodes { get; } = new();
 
     public Block? CurrentBlock { get; set; }
@@ -37,57 +38,7 @@ public partial class State : ObservableObject
 
     public State()
     {
-        // graph nodes should also have conditions in them
-        GraphNodes.Add(
-            new GraphNode
-            {
-                NodeColor = "Cyan",
-                DashboardTitle = "BLOCK 1",
-                CardTitle = "BLOCK 1 // SECURE",
-                CardDescription =
-                    "System execution normal. Command processed successfully without anomalies.",
-            }
-        );
-
-        GraphNodes.Add(
-            new GraphNode
-            {
-                NodeColor = "Red",
-                DashboardTitle = "BLOCK 2",
-                CardTitle = "BLOCK 2 // HALTED",
-                CardDescription =
-                    "Manual override required. Check HINTS for further instructions on how to bypass the security wall.",
-            }
-        );
-
-        GraphNodes.Add(
-            new GraphNode
-            {
-                NodeColor = "Purple",
-                DashboardTitle = "BLOCK 3",
-                CardTitle = "BLOCK 3 // ENCRYPTED",
-                CardDescription =
-                    "Data stream is heavily encrypted. Awaiting decryption key from terminal input.",
-            }
-        );
-
-        GraphNodes.Add(new GraphNode());
-        GraphNodes.Add(new GraphNode());
-
         SetActiveNode();
-
-        CurrentBlock = new Block
-        {
-            g_uid = "block_1",
-            decisions = new List<Decision>
-            {
-                new Decision
-                {
-                    command_sequence = new List<string> { "override sys" },
-                    next_block_uid = "block_2",
-                },
-            },
-        };
     }
 
     public void SetActiveNode()
@@ -115,25 +66,40 @@ public partial class State : ObservableObject
         }
     }
 
-    public void assessCommand(string currentCommand)
+    public string assessCommand(string currentCommand)
     {
         // go to current block
         // get the penalties for the current block
         // add the penalties with the current metrics
 
-        var result = CurrentBlock?.commandEntered(currentCommand);
+        var result = CurrentBlock.commandEntered(currentCommand);
 
-        Efficiency += result.EfficiencyDelta;
-        Knowledge += result.KnowledgeDelta;
-
-        Console.WriteLine($"Stats updated: Efficiency={Efficiency}, Knowledge={Knowledge}");
+        Efficiency += result.Deltas.efficiency;
+        Knowledge += result.Deltas.knowledge;
+        Evidence += result.Deltas.evidence;
+        Reputation += result.Deltas.reputation;
 
         if (result.AdvanceToNextBlock)
         {
-            Console.WriteLine($"Decision correct! Moving to {result.NextBlockUid}");
+            if (result.NextBlockUid == "0")
+            {
+                return "\n>>> SYSTEM OVERRIDE SUCCESSFUL. YOU WON. <<<\n";
+            }
 
-            SetActiveNode();
+            if (_blockDict.TryGetValue(result.NextBlockUid, out Block? nextBlock))
+            {
+                CurrentBlock = nextBlock;
+                SetActiveNodeByUid(CurrentBlock.g_uid);
+
+                return $"\n[SYSTEM] Advanced to {CurrentBlock.ui_dashboard_title}\n";
+            }
+            else
+            {
+                return $"\n[ERROR] CRITICAL FAULT: Block {result.NextBlockUid} not found.\n";
+            }
         }
+
+        return string.Empty;
     }
 
     public void setPenalties()
@@ -141,5 +107,78 @@ public partial class State : ObservableObject
         // get the dict from the block class and modify the state variables
     }
 
-    public void loadStory(string filePath) { }
+    public void loadStory(string filePath)
+    {
+        Console.WriteLine($"Loading story from: {filePath}");
+
+        try
+        {
+            string jsonString = System.IO.File.ReadAllText(filePath);
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            var storyData = System.Text.Json.JsonSerializer.Deserialize<StorySchema>(
+                jsonString,
+                options
+            );
+
+            if (storyData == null || storyData.blocks.Count == 0)
+                throw new Exception("Story data is empty or invalid.");
+
+            _blockDict.Clear();
+            GraphNodes.Clear();
+
+            foreach (var block in storyData.blocks)
+            {
+                _blockDict[block.g_uid] = block;
+                GraphNodes.Add(CreateGraphNodeFromBlock(block));
+            }
+
+            if (_blockDict.TryGetValue(storyData.start_block_uid, out Block? startBlock))
+            {
+                CurrentBlock = startBlock;
+                SetActiveNodeByUid(CurrentBlock.g_uid);
+            }
+            else
+            {
+                Console.WriteLine("CRITICAL ERROR: Start block UID not found in JSON.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load story: {ex.Message}");
+        }
+    }
+
+    private void PopulateGraphNodeFromBlock(GraphNode node, Block block)
+    {
+        node.NodeColor = block.ui_color;
+        node.DashboardTitle = block.ui_dashboard_title;
+        node.CardTitle = block.ui_card_title;
+        node.CardDescription = block.ui_card_description;
+    }
+
+    private GraphNode CreateGraphNodeFromBlock(Block block)
+    {
+        var node = new GraphNode();
+        node.Uid = block.g_uid;
+        node.NodeColor = block.ui_color;
+        node.DashboardTitle = block.ui_dashboard_title;
+        node.CardTitle = block.ui_card_title;
+        node.CardDescription = block.ui_card_description;
+        return node;
+    }
+
+    public void SetActiveNodeByUid(string uid)
+    {
+        foreach (var node in GraphNodes)
+        {
+            if (node.Uid == uid)
+            {
+                ActiveNode = node;
+                return;
+            }
+        }
+    }
 }

@@ -132,7 +132,20 @@ public partial class MainWindowViewModel : ObservableObject
             IsCommandRunning = false;
         }
 
-        state.assessCommand(commandToRun);
+        string stateFeedback = state.assessCommand(commandToRun);
+        
+        if (!string.IsNullOrWhiteSpace(stateFeedback))
+        {
+            if (sb.Length > 0) 
+            {
+                sb.AppendLine();
+                sb.AppendLine(); 
+            }
+            
+            sb.AppendLine(stateFeedback);
+            
+            entry.Output = sb.ToString().TrimEnd();
+        }
     }
 
     [RelayCommand]
@@ -165,7 +178,6 @@ public partial class MainWindowViewModel : ObservableObject
         {
             var currentTerminalWindow = desktopApp.MainWindow;
 
-            // Update this delegate signature as well
             var startWindow = new StartWindow(
                 async (filePath, stateFilePath) =>
                 {
@@ -175,7 +187,6 @@ public partial class MainWindowViewModel : ObservableObject
                     desktopApp.MainWindow = newMainWindow;
                     newMainWindow.Show();
 
-                    // Pass both parameters
                     await newViewModel.StartGame(filePath, stateFilePath);
                 }
             )

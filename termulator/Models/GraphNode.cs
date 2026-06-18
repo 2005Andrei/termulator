@@ -10,6 +10,8 @@ namespace termulator.ViewModels;
 
 public partial class GraphNode : ObservableObject
 {
+    public string Uid { get; set; } = string.Empty;
+
     [ObservableProperty]
     private string _nodeColor = "Gray";
 
