@@ -41,16 +41,19 @@ public partial class State : ObservableObject
     private GraphNode? _activeNode;
 
     [ObservableProperty]
-    private int _efficiency = 0;
+    public string _title;
 
-    [ObservableProperty]
-    private int _knowledge = 0;
-
-    [ObservableProperty]
-    private int _evidence = 0;
-
-    [ObservableProperty]
-    private int _reputation = 0;
+    // [ObservableProperty]
+    // private int _efficiency = 0;
+    //
+    // [ObservableProperty]
+    // private int _knowledge = 0;
+    //
+    // [ObservableProperty]
+    // private int _evidence = 0;
+    //
+    // [ObservableProperty]
+    // private int _reputation = 0;
 
     public bool IsGameOver { get; private set; } = false;
 
@@ -209,6 +212,7 @@ public partial class State : ObservableObject
 
             _deathCondition = storyData.death_condition;
             _deathBlockUid = storyData.death_block_uid;
+            Title = storyData.title;
 
             var visibleStats = new List<HudStat>();
 

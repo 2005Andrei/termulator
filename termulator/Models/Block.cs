@@ -175,6 +175,7 @@ public class ConditionNode
 
 public class StorySchema
 {
+    public string title { get; set; } = string.Empty;
     public string start_block_uid { get; set; } = string.Empty;
     public string death_block_uid { get; set; } = string.Empty;
 

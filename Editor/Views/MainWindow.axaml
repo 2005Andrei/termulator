@@ -1,0 +1,177 @@
+<?xml version="1.0"?>
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Editor.ViewModels" xmlns:models="using:Editor.Models" xmlns:conv="using:Editor.Converters" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700" x:Class="Editor.Views.MainWindow" x:DataType="vm:MainWindowViewModel" Title="Story Editor" Background="#1E1E1E">
+    <Window.Resources>
+        <conv:StringToListConverter x:Key="StringToListConverter"/>
+        <conv:StringToDictionaryConverter x:Key="StringToDictConverter"/>
+    </Window.Resources>
+    <Grid ColumnDefinitions="260, *, 240" RowDefinitions="Auto, *">
+        <Border Grid.Row="0" Grid.ColumnSpan="3" Background="#252526" Padding="15,10" BorderBrush="#333" BorderThickness="0,0,0,1">
+            <TextBlock Text="STORY EDITOR" FontSize="14" FontWeight="Bold" Foreground="#00BCD4"/>
+        </Border>
+        <Border Grid.Row="1" Grid.Column="0" BorderBrush="#333" BorderThickness="0,0,1,0" Background="#252526" Padding="10">
+            <TreeView ItemsSource="{Binding TreeItems}" SelectedItem="{Binding SelectedNode}" Background="Transparent">
+                <TreeView.ItemTemplate>
+                    <TreeDataTemplate ItemsSource="{Binding Children}">
+                        <TextBlock Text="{Binding Name}" Foreground="#E0E0E0" Padding="2,4"/>
+                    </TreeDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+        </Border>
+        <Border Grid.Row="1" Grid.Column="1" Padding="30,20">
+            <ContentControl Content="{Binding SelectedContent}">
+                <ContentControl.DataTemplates>
+                    <DataTemplate DataType="models:StorySchema">
+                        <ScrollViewer>
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="STORY METADATA" FontSize="18" FontWeight="Bold" Foreground="#00BCD4" Margin="0,0,0,10"/>
+                                <TextBlock Text="Title:" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding title}" Watermark="Story title"/>
+                                <Grid ColumnDefinitions="*, 15, *" Margin="0,5,0,0">
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="Start Block UID:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding start_block_uid}" Watermark="e.g. block_1"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="4">
+                                        <TextBlock Text="Death Block UID:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding death_block_uid}" Watermark="e.g. block_death"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DataTemplate>
+                    <DataTemplate DataType="models:Block">
+                        <ScrollViewer>
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="BLOCK EDITOR" FontSize="18" FontWeight="Bold" Foreground="#FFA726" Margin="0,0,0,10"/>
+                                <TextBlock Text="Block UID (g_uid):" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding g_uid}" Watermark="e.g. block_1" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*, 15, *" Margin="0,5,0,0">
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="Dashboard Title:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding ui_dashboard_title}" Watermark="STAGE 01"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="4">
+                                        <TextBlock Text="UI Color:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding ui_color}" Watermark="Cyan, Red..."/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="Card Title:" Foreground="#AAAAAA" Margin="0,5,0,0"/>
+                                <TextBox Text="{Binding ui_card_title}"/>
+                                <TextBlock Text="Card Description:" Foreground="#AAAAAA" Margin="0,5,0,0"/>
+                                <TextBox Text="{Binding ui_card_description}"/>
+                                <TextBlock Text="Narrative Instructions:" Foreground="#AAAAAA" Margin="0,5,0,0"/>
+                                <TextBox Text="{Binding instructions}" AcceptsReturn="True" TextWrapping="Wrap" Height="100"/>
+                                <TextBlock Text="Hint:" Foreground="#AAAAAA" Margin="0,5,0,0"/>
+                                <TextBox Text="{Binding hint}"/>
+                                <Border Background="#2C241B" CornerRadius="6" Padding="15" Margin="0,15,0,0" BorderBrush="#4E342E" BorderThickness="1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Wrong-Command Penalties" Foreground="#FFCC80" FontWeight="Bold"/>
+                                        <TextBlock Text="Format: key:value, key:value (e.g., efficiency:-10, reputation:-5)" Foreground="#999" FontSize="11"/>
+                                        <TextBox Text="{Binding wrong_command_penalties, Converter={StaticResource StringToDictConverter}}" Watermark="efficiency:-10, reputation:-5"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DataTemplate>
+                    <DataTemplate DataType="models:Decision">
+                        <ScrollViewer>
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="DECISION EDITOR" FontSize="18" FontWeight="Bold" Foreground="#CE93D8" Margin="0,0,0,10"/>
+                                <TextBlock Text="Description (UI text):" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding description}"/>
+                                <TextBlock Text="Target Next Block UID:" Foreground="#AAAAAA" Margin="0,5,0,0"/>
+                                <TextBox Text="{Binding next_block_uid}" FontWeight="Bold" Foreground="#B39DDB"/>
+                                <Border Background="#1F1A24" CornerRadius="6" Padding="15" Margin="0,15,0,0" BorderBrush="#4A148C" BorderThickness="1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Command Sequence" Foreground="#CE93D8" FontWeight="Bold"/>
+                                        <TextBlock Text="Comma separated list (e.g., override, sys, root)" Foreground="#999" FontSize="11"/>
+                                        <TextBox Text="{Binding command_sequence, Converter={StaticResource StringToListConverter}}" Watermark="override, sys"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#1B2620" CornerRadius="6" Padding="15" Margin="0,15,0,0" BorderBrush="#1B5E20" BorderThickness="1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Rewards on Success" Foreground="#A5D6A7" FontWeight="Bold"/>
+                                        <TextBlock Text="Format: key:value (e.g., efficiency:10, knowledge:5)" Foreground="#999" FontSize="11"/>
+                                        <TextBox Text="{Binding rewards, Converter={StaticResource StringToDictConverter}}" Watermark="efficiency:10"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DataTemplate>
+                    <DataTemplate DataType="models:ConditionNode">
+                        <ScrollViewer>
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="CONDITION EDITOR" FontSize="18" FontWeight="Bold" Foreground="#FFF176" Margin="0,0,0,8"/>
+                                <TextBlock Text="Type:" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding type}" Watermark="COMPARISON, AND, or OR"/>
+                                <TextBlock Text="Property (COMPARISON only):" Foreground="#AAAAAA" Margin="0,6,0,0"/>
+                                <TextBox Text="{Binding property}" Watermark="e.g. inventory.money"/>
+                                <TextBlock Text="Operator (COMPARISON only):" Foreground="#AAAAAA" Margin="0,6,0,0"/>
+                                <TextBox Text="{Binding op}" Watermark="&lt;  &lt;=  &gt;  &gt;=  ==  !="/>
+                                <TextBlock Text="Value (COMPARISON only):" Foreground="#AAAAAA" Margin="0,6,0,0"/>
+                                <TextBox Text="{Binding value}" Watermark="Integer"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DataTemplate>
+                    <DataTemplate DataType="models:StatePropertyDefinition">
+                        <ScrollViewer>
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="PROPERTY EDITOR" FontSize="18" FontWeight="Bold" Foreground="#66BB6A" Margin="0,0,0,8"/>
+                                <TextBlock Text="Key (unique):" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding key}" Watermark="e.g. player.life"/>
+                                <TextBlock Text="HUD Label:" Foreground="#AAAAAA" Margin="0,6,0,0"/>
+                                <TextBox Text="{Binding hudLabel}" Watermark="Label shown in HUD"/>
+                                <Grid ColumnDefinitions="*, 10, *, 10, *" Margin="0,6,0,0">
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="Min:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding min}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="4">
+                                        <TextBlock Text="Max:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding max}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4" Spacing="4">
+                                        <TextBlock Text="Initial:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding initial}"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid ColumnDefinitions="*, 10, *" Margin="0,6,0,0">
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="HUD Order:" Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding hudOrder}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="4">
+                                        <TextBlock Text="Visible in HUD:" Foreground="#AAAAAA"/>
+                                        <CheckBox IsChecked="{Binding visibleInHud}" Foreground="#CCCCCC"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="On-Min redirect block (optional):" Foreground="#AAAAAA" Margin="0,6,0,0"/>
+                                <TextBox Text="{Binding onMinBlock}" Watermark="e.g. ending.death"/>
+                                <TextBlock Text="On-Max redirect block (optional):" Foreground="#AAAAAA" Margin="0,6,0,0"/>
+                                <TextBox Text="{Binding onMaxBlock}" Watermark="e.g. ending.captured"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DataTemplate>
+                </ContentControl.DataTemplates>
+            </ContentControl>
+        </Border>
+        <Border Grid.Row="1" Grid.Column="2" BorderBrush="#333" BorderThickness="1,0,0,0" Background="#252526" Padding="15">
+            <StackPanel Spacing="10">
+                <TextBlock Text="ACTIONS" FontWeight="Bold" FontSize="12" Foreground="#888" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                <TextBlock Text="Global Story" Foreground="#666" FontSize="11" FontWeight="SemiBold"/>
+                <Button Content="+ Global Death Condition" Command="{Binding AddGlobalDeathConditionCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#424242"/>
+                <Button Content="+ New Block" Command="{Binding AddBlockCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#37474F"/>
+                <Button Content="+ New Property" Command="{Binding AddPropertyCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#37474F"/>
+                <Separator Background="#383838" Margin="0,10"/>
+                <TextBlock Text="Node-Specific" Foreground="#666" FontSize="11" FontWeight="SemiBold"/>
+                <Button Content="+ Add Decision" Command="{Binding AddDecisionCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#1B5E20"/>
+                <Button Content="+ Add Condition" Command="{Binding AddConditionNodeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#004D40"/>
+                <Separator Background="#383838" Margin="0,10"/>
+                <Button Content="Delete Selected" Command="{Binding DeleteSelectedCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#7F0000" Foreground="#FFCDD2"/>
+                <Separator Background="#383838" Margin="0,10"/>
+                <Button Content="&#x2B07;  Export to ZIP" Command="{Binding SaveStoryToZipCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#1A237E" Foreground="White" FontWeight="Bold" Padding="10,12"/>
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF5252" FontWeight="Bold" TextWrapping="Wrap" FontSize="12" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
