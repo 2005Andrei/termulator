@@ -2,10 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace termulator.ViewModels;
+
+public class SaveStateData
+{
+    public string CurrentBlockUid { get; set; } = string.Empty;
+    public Dictionary<string, int> Variables { get; set; } = new();
+}
 
 public partial class State : ObservableObject
 {
@@ -19,8 +26,11 @@ public partial class State : ObservableObject
     private Dictionary<string, Block> _blockDict = new();
     public ObservableCollection<GraphNode> GraphNodes { get; } = new();
 
-    private StatModifiers _minStats = new();
-    private StatModifiers _maxStats = new();
+    private Dictionary<string, StatePropertyDefinition> _propDefs = new();
+    private Dictionary<string, int> _variables = new();
+
+    public ObservableCollection<HudStat> HudStats { get; } = new();
+
     private ConditionNode? _deathCondition;
     private string _deathBlockUid = string.Empty;
 
@@ -74,20 +84,59 @@ public partial class State : ObservableObject
         }
     }
 
+    public int GetVariable(string key)
+    {
+        return _variables.TryGetValue(key, out int val) ? val : 0;
+    }
+
     public string assessCommand(string currentCommand)
     {
-        // go to current block
-        // get the penalties for the current block
-        // add the penalties with the current metrics
+        if (CurrentBlock == null)
+            return string.Empty;
 
         var result = CurrentBlock.commandEntered(currentCommand);
 
-        Efficiency += result.Deltas.efficiency;
-        Knowledge += result.Deltas.knowledge;
-        Evidence += result.Deltas.evidence;
-        Reputation += result.Deltas.reputation;
+        if (result.Deltas != null)
+        {
+            foreach (var delta in result.Deltas)
+            {
+                if (_variables.ContainsKey(delta.Key))
+                {
+                    _variables[delta.Key] += delta.Value;
 
-        ClampStats();
+                    var def = _propDefs[delta.Key];
+                    _variables[delta.Key] = Math.Clamp(_variables[delta.Key], def.min, def.max);
+
+                    var hudStat = HudStats.FirstOrDefault(h => h.Key == delta.Key);
+                    if (hudStat != null)
+                    {
+                        hudStat.Value = _variables[delta.Key];
+                    }
+
+                    if (_variables[delta.Key] == def.min && !string.IsNullOrEmpty(def.onMinBlock))
+                    {
+                        if (_blockDict.TryGetValue(def.onMinBlock, out Block? minDeathBlock))
+                        {
+                            CurrentBlock = minDeathBlock;
+                            SetActiveNodeByUid(CurrentBlock.g_uid);
+                            IsGameOver = true;
+                            return $"\n[SYSTEM ALERT] METRIC {def.hudLabel.ToUpper()} CRITICAL. INITIATING SHUTDOWN...\n";
+                        }
+                    }
+
+                    if (_variables[delta.Key] == def.max && !string.IsNullOrEmpty(def.onMaxBlock))
+                    {
+                        if (_blockDict.TryGetValue(def.onMaxBlock, out Block? maxDeathBlock))
+                        {
+                            CurrentBlock = maxDeathBlock;
+                            SetActiveNodeByUid(CurrentBlock.g_uid);
+                            IsGameOver = true;
+                            return $"\n[SYSTEM ALERT] METRIC {def.hudLabel.ToUpper()} CRITICAL. INITIATING SHUTDOWN...\n";
+                        }
+                    }
+                }
+            }
+        }
 
         if (_deathCondition != null && _deathCondition.Evaluate(this))
         {
@@ -96,7 +145,7 @@ public partial class State : ObservableObject
                 CurrentBlock = deathBlock;
                 SetActiveNodeByUid(CurrentBlock.g_uid);
                 IsGameOver = true;
-                return "\n[SYSTEM ALERT] CRITICAL METRICS FAILURE. INITIATING SHUTDOWN SEQUENCE...\n In other words: YOU LOST";
+                return "\n[SYSTEM ALERT] CRITICAL METRICS FAILURE. INITIATING SHUTDOWN SEQUENCE...\n";
             }
         }
 
@@ -104,6 +153,7 @@ public partial class State : ObservableObject
         {
             if (result.NextBlockUid == "0")
             {
+                IsGameOver = true;
                 return "\n>>> SYSTEM OVERRIDE SUCCESSFUL. YOU WON. <<<\n";
             }
 
@@ -113,41 +163,38 @@ public partial class State : ObservableObject
                 SetActiveNodeByUid(CurrentBlock.g_uid);
                 return $"\n[SYSTEM] Advanced to {CurrentBlock.ui_dashboard_title}\n";
             }
-            else // shouldn't happen
-            {
-                return $"\n[ERROR] CRITICAL FAULT: Block {result.NextBlockUid} not found.\n";
-            }
         }
 
         return string.Empty;
     }
 
-    private void ClampStats()
-    {
-        Efficiency = Math.Clamp(Efficiency, _minStats.efficiency, _maxStats.efficiency);
-        Knowledge = Math.Clamp(Knowledge, _minStats.knowledge, _maxStats.knowledge);
-        Evidence = Math.Clamp(Evidence, _minStats.evidence, _maxStats.evidence);
-        Reputation = Math.Clamp(Reputation, _minStats.reputation, _maxStats.reputation);
-    }
+    // private void ClampStats()
+    // {
+    //     Efficiency = Math.Clamp(Efficiency, _minStats.efficiency, _maxStats.efficiency);
+    //     Knowledge = Math.Clamp(Knowledge, _minStats.knowledge, _maxStats.knowledge);
+    //     Evidence = Math.Clamp(Evidence, _minStats.evidence, _maxStats.evidence);
+    //     Reputation = Math.Clamp(Reputation, _minStats.reputation, _maxStats.reputation);
+    // }
 
     public void setPenalties()
     {
         // get the dict from the block class and modify the state variables
     }
 
-    public void loadStory(string filePath)
+    public void loadStory(string filePath) // filepath is json string but I'm lazy to change its occurances in the file
     {
         Console.WriteLine($"Loading story from: {filePath}");
-
         try
         {
-            string jsonString = System.IO.File.ReadAllText(filePath);
+            IsGameOver = false;
+
             var options = new System.Text.Json.JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
             };
+
             var storyData = System.Text.Json.JsonSerializer.Deserialize<StorySchema>(
-                jsonString,
+                filePath,
                 options
             );
 
@@ -156,16 +203,38 @@ public partial class State : ObservableObject
 
             _blockDict.Clear();
             GraphNodes.Clear();
+            _propDefs.Clear();
+            _variables.Clear();
+            HudStats.Clear();
 
-            _minStats = storyData.min_stats ?? new StatModifiers();
-            _maxStats = storyData.max_stats ?? new StatModifiers();
             _deathCondition = storyData.death_condition;
             _deathBlockUid = storyData.death_block_uid;
 
-            Efficiency = storyData.initial_stats?.efficiency ?? 50;
-            Knowledge = storyData.initial_stats?.knowledge ?? 10;
-            Evidence = storyData.initial_stats?.evidence ?? 0;
-            Reputation = storyData.initial_stats?.reputation ?? 0;
+            var visibleStats = new List<HudStat>();
+
+            foreach (var prop in storyData.properties)
+            {
+                _propDefs[prop.key] = prop;
+                _variables[prop.key] = prop.initial;
+
+                if (prop.visibleInHud)
+                {
+                    visibleStats.Add(
+                        new HudStat
+                        {
+                            Key = prop.key,
+                            Label = prop.hudLabel,
+                            Value = prop.initial,
+                            Order = prop.hudOrder,
+                        }
+                    );
+                }
+            }
+
+            foreach (var stat in visibleStats.OrderBy(s => s.Order))
+            {
+                HudStats.Add(stat);
+            }
 
             foreach (var block in storyData.blocks)
             {
@@ -178,14 +247,10 @@ public partial class State : ObservableObject
                 CurrentBlock = startBlock;
                 SetActiveNodeByUid(CurrentBlock.g_uid);
             }
-            else
-            {
-                Console.WriteLine("cirticial error");
-            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"fah {ex.Message}");
+            Console.WriteLine($"Failed to load story: {ex.Message}");
         }
     }
 
@@ -217,6 +282,82 @@ public partial class State : ObservableObject
                 ActiveNode = node;
                 return;
             }
+        }
+    }
+
+    public string GenerateSaveStateJson()
+    {
+        var data = new SaveStateData
+        {
+            CurrentBlockUid = CurrentBlock?.g_uid ?? string.Empty,
+            Variables = new Dictionary<string, int>(_variables), // Clone the runtime dictionary
+        };
+
+        return System.Text.Json.JsonSerializer.Serialize(
+            data,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+        );
+    }
+
+    public void loadStateFromJson(string jsonString)
+    {
+        Console.WriteLine("Applying saved state overrides...");
+        try
+        {
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            var savedData = System.Text.Json.JsonSerializer.Deserialize<SaveStateData>(
+                jsonString,
+                options
+            );
+
+            if (savedData == null)
+                return;
+
+            // 1. Restore the Variables and Update the HUD
+            if (savedData.Variables != null)
+            {
+                foreach (var kvp in savedData.Variables)
+                {
+                    // Only apply if the property still exists in the current story schema
+                    if (_variables.ContainsKey(kvp.Key))
+                    {
+                        _variables[kvp.Key] = kvp.Value;
+
+                        // Force the UI HUD to update instantly
+                        var hudStat = HudStats.FirstOrDefault(h => h.Key == kvp.Key);
+                        if (hudStat != null)
+                        {
+                            hudStat.Value = kvp.Value;
+                        }
+                    }
+                }
+            }
+
+            // 2. Restore the Timeline / Current Block
+            if (!string.IsNullOrEmpty(savedData.CurrentBlockUid))
+            {
+                if (_blockDict.TryGetValue(savedData.CurrentBlockUid, out Block? savedBlock))
+                {
+                    CurrentBlock = savedBlock;
+                    SetActiveNodeByUid(CurrentBlock.g_uid);
+                    Console.WriteLine(
+                        $"State restored! Jumped to: {CurrentBlock.ui_dashboard_title}"
+                    );
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"WARNING: Saved block '{savedData.CurrentBlockUid}' does not exist in this story file."
+                    );
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to apply save state: {ex.Message}");
         }
     }
 }

@@ -20,17 +20,21 @@
         <Grid RowDefinitions="Auto, Auto, *">
             <!-- stats -->
             <Border Background="#1E1E1E" BorderBrush="#333" BorderThickness="0,0,0,1" Grid.Row="0" Padding="15,10">
-                <Grid ColumnDefinitions="*, Auto">
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
-                        <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN"/>
-                        <TextBlock Foreground="Lime" Text="{Binding state.Efficiency, StringFormat='EFFICIENCY: {0}%'}"/>
-                        <TextBlock Foreground="Purple" Text="{Binding state.Knowledge, StringFormat='KNOWLEDGE: {0}'}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
-                        <TextBlock Foreground="Orange" Text="{Binding state.Evidence, StringFormat='EVIDENCE: {0}'}"/>
-                        <TextBlock Foreground="Gold" Text="{Binding state.Reputation, StringFormat='REPUTATION: {0}'}"/>
-                    </StackPanel>
-                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="30">
+                    <TextBlock FontWeight="Bold" Foreground="Cyan" Text="USER: ADMIN" VerticalAlignment="Center"/>
+                    <ItemsControl ItemsSource="{Binding state.HudStats}" VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="20"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Foreground="Lime" Text="{Binding DisplayText}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </Border>
             <!-- graph thingy to visualize current block -->
             <Border Background="#1A1A1A" CornerRadius="5" Grid.Row="1" Height="50" Padding="15,0">

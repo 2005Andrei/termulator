@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using termulator.Views;
@@ -37,6 +41,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     private CancellationTokenSource? _commandCts;
 
+    private string _rawStoryJson = string.Empty;
+
     // // main constructor
     // public MainWindowViewModel()
     // {
@@ -61,7 +67,41 @@ public partial class MainWindowViewModel : ObservableObject
     public async Task StartGame(string filePath, string? stateFilePath = null)
     {
         Console.WriteLine("start game");
-        loadStory(filePath);
+        string jsonContent = string.Empty;
+        try
+        {
+            using (ZipArchive archive = ZipFile.OpenRead(filePath))
+            {
+                ZipArchiveEntry? storyEntry = archive.Entries.FirstOrDefault(e =>
+                    e.Name.Equals("story.json", StringComparison.OrdinalIgnoreCase)
+                );
+                if (storyEntry != null)
+                {
+                    using (StreamReader reader = new StreamReader(storyEntry.Open()))
+                    {
+                        jsonContent = await reader.ReadToEndAsync();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(
+                        "CRITICAL ERROR: story.json not found in the root of the zip archive."
+                    );
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reading zip archive: {ex.Message}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(jsonContent))
+        {
+            _rawStoryJson = jsonContent;
+            state.loadStory(jsonContent);
+        }
+
+        // loadStory(filePath);
         await StartEngine();
         if (!string.IsNullOrWhiteSpace(stateFilePath))
         {
@@ -69,15 +109,44 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public void loadStory(string filePath)
-    {
-        state.loadStory(filePath);
-        Console.WriteLine("loading story in mainwindowviewmodel");
-    }
+    // public void loadStory(string filePath)
+    // {
+    //     Console.WriteLine("loading story in mainwindowviewmodel");
+    //     state.loadStory(filePath);
+    // }
 
     public void loadState(string filePath)
     {
-        Console.WriteLine("load story");
+        Console.WriteLine($"Loading saved state from archive: {filePath}");
+        string jsonContent = string.Empty;
+
+        try
+        {
+            using (var archive = System.IO.Compression.ZipFile.OpenRead(filePath))
+            {
+                var stateEntry = archive.GetEntry("state.json");
+                if (stateEntry != null)
+                {
+                    using (var reader = new System.IO.StreamReader(stateEntry.Open()))
+                    {
+                        jsonContent = reader.ReadToEnd();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("CRITICAL ERROR: state.json not found in the save archive.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reading state archive: {ex.Message}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(jsonContent))
+        {
+            state.loadStateFromJson(jsonContent);
+        }
     }
 
     [RelayCommand]
@@ -206,14 +275,80 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public void SaveState()
+    public async Task SaveState()
     {
         Console.WriteLine("Save state clicked");
+
+        if (
+            Application.Current?.ApplicationLifetime
+                is IClassicDesktopStyleApplicationLifetime desktopApp
+            && desktopApp.MainWindow != null
+        )
+        {
+            var storageProvider = desktopApp.MainWindow.StorageProvider;
+
+            var file = await storageProvider.SaveFilePickerAsync(
+                new FilePickerSaveOptions
+                {
+                    Title = "Save Game State",
+                    DefaultExtension = ".zip",
+                    SuggestedFileName = "savegame.zip",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType("Save Archive") { Patterns = new[] { "*.zip" } },
+                    },
+                }
+            );
+
+            if (file != null)
+            {
+                string jsonState = state.GenerateSaveStateJson();
+
+                using (var stream = await file.OpenWriteAsync())
+                {
+                    using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+                    {
+                        var entry = archive.CreateEntry("state.json");
+                        using (var entryStream = entry.Open())
+                        using (var writer = new StreamWriter(entryStream))
+                        {
+                            await writer.WriteAsync(jsonState);
+                        }
+                    }
+                }
+
+                Console.WriteLine("State successfully packaged and saved!");
+            }
+        }
     }
 
     public void Restart()
     {
-        Console.WriteLine("Restart clicked");
+        Console.WriteLine("Restart clicked - Soft Rebooting System...");
+
+        // 1. Clear the terminal history
+        History.Clear();
+        CurrentCommand = string.Empty;
+
+        // 2. Reload the base story from our cached JSON string
+        // This instantly resets the HUD, active nodes, and variables to their initial state!
+        if (!string.IsNullOrWhiteSpace(_rawStoryJson))
+        {
+            state.loadStory(_rawStoryJson);
+        }
+
+        // 3. Unlock the terminal (in case they were previously dead or won)
+        DockerLoaded = true;
+
+        // 4. Print a cool system message so they know it worked
+        History.Add(
+            new TerminalEntry
+            {
+                Command = "sys-alert",
+                Output =
+                    "\n[SYSTEM] Simulation restarted. All metrics reset to initial parameters.\n",
+            }
+        );
     }
 
     public void ExitAppCommand()
@@ -233,7 +368,7 @@ public partial class MainWindowViewModel : ObservableObject
         _commandCts?.Cancel();
         engine.SendInterrupt();
 
-        await Task.Delay(5000);
+        await Task.Delay(50000);
         Console.WriteLine("Goodbye.");
 
         Environment.Exit(0);

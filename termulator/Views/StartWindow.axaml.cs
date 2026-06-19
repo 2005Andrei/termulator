@@ -114,7 +114,7 @@ public partial class StartWindow : Window
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
-                    new FilePickerFileType("Zips") { Patterns = new[] { "*.json" } }, // txt atm
+                    new FilePickerFileType("Zips") { Patterns = new[] { "*.zip" } }, // txt atm
                     FilePickerFileTypes.All,
                 },
             }
@@ -179,7 +179,7 @@ public partial class StartWindow : Window
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
-                    new FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } },
+                    new FilePickerFileType("Zips") { Patterns = new[] { "*.zip" } },
                     FilePickerFileTypes.All,
                 },
             }
